@@ -1,0 +1,88 @@
+variables:
+- group: td.deploy
+
+jobs:
+  - job: BuildModule
+
+    pool:
+      vmImage: vs2017-win2016
+      #vmImage: 'ubuntu-latest'
+
+    steps:
+      - task: NuGetToolInstaller@0
+        inputs:
+          checkLatest: true
+
+      - task: DownloadSecureFile@1
+        displayName: 'Download secure file'
+        inputs:
+          secureFile: '4b113b89-08c3-4d7c-9326-d06d36fe045d'
+
+      - pwsh: ./build/build.ps1
+        displayName: 'Build and Test'
+        condition: and(succeeded(), ne(variables['BuildType'], 'release') )
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CertPassword: $(CertPassword)
+
+      - pwsh: ./build/build.ps1 -Publish
+        displayName: 'Build, Test and Publish'
+        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['Build.Reason'], 'Schedule'), eq(variables['BuildType'], 'release') )
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CertPassword: $(CertPassword)
+      
+      - task: PublishCodeCoverageResults@1
+        condition: always()
+        inputs:
+          codeCoverageTool: 'JaCoCo'
+          summaryFileLocation: '**/Coverage-Pester.xml'
+          pathToSources: '$(System.DefaultWorkingDirectory)/src/Scriptbook/Public'
+
+      - task: PublishTestResults@2
+        condition: always()
+        inputs:
+          testRunner: 'NUnit'
+          testResultsFiles: '**/Test-Pester.XML'
+          testRunTitle: 'Module'
+          failTaskOnFailedTests: true
+        displayName: 'Publish Test Results'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifacts'
+        inputs:
+          PathtoPublish: deploy/Output
+          ArtifactName: drop
+          publishLocation: Container
+          Parallel: true
+
+  - job: BuildModuleLinux
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+      - task: NuGetToolInstaller@0
+        inputs:
+          checkLatest: true
+
+      - pwsh: ./build/build.ps1
+        displayName: 'Build and Test'
+        condition: and(succeeded(), ne(variables['BuildType'], 'release') )
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+      - task: PublishCodeCoverageResults@1
+        condition: always()
+        inputs:
+          codeCoverageTool: 'JaCoCo'
+          summaryFileLocation: '**/Coverage-Pester.xml'
+          pathToSources: '$(System.DefaultWorkingDirectory)/src/Scriptbook/Public'
+
+      - task: PublishTestResults@2
+        condition: always()
+        inputs:
+          testRunner: 'NUnit'
+          testResultsFiles: '**/Test-Pester.XML'
+          testRunTitle: 'Module'
+          failTaskOnFailedTests: true
+        displayName: 'Publish Test Results'

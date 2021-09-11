@@ -1,0 +1,11 @@
+{
+    "name": "PowerShell",
+    "dockerFile": "Dockerfile",
+    // Add the IDs of extensions you want installed when the container is created.
+    "extensions": [
+        "ms-azure-devops.azure-pipelines",
+        "ms-dotnettools.csharp",
+        "ms-vscode.powershell",
+        "DavidAnson.vscode-markdownlint"
+    ]
+}
