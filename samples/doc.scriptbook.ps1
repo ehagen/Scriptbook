@@ -1,0 +1,59 @@
+<#
+.SYNOPSIS
+Say Doc Workflow
+
+.DESCRIPTION
+Say Doc Workflow which shows the documentation output
+#>
+[CmdletBinding(SupportsShouldProcess = $True)]
+Param()
+
+Set-Location $PSScriptRoot
+
+if (!(Get-Module Scriptbook -ListAvailable -ErrorAction Ignore))
+{
+    Install-Module -Name Scriptbook -Repository PSGallery -Scope CurrentUser -AllowClobber
+}
+
+Action Hello {
+<#
+.SYNOPSIS
+Action Hello
+
+.DESCRIPTION
+Action Hello Show Information about Hello
+#>
+
+    Write-Info "Hello"
+}
+
+Action GoodBy {
+<#
+.SYNOPSIS
+Action GoodBy
+
+.DESCRIPTION
+Action Hello Show Information about GoodBy
+#>
+
+    Write-Info "GoodBy"
+
+<#
+
+.REMARK
+Will not be last action
+#>
+}
+
+Action AlmostFinished {
+    # We are almost finished
+    # One more action to go
+    # first this action
+    Write-Info "AlmostFinished"
+}
+
+Action Finished {
+    Write-Info "Finished"
+}
+    
+Start-Workflow -Name HelloWorkflow -Documentation -WhatIf:$WhatIfPreference

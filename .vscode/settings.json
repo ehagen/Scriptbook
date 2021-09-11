@@ -1,0 +1,39 @@
+{
+    "cSpell.enableFiletypes": [
+        "markdown",
+        "powershell"
+    ],
+    "cSpell.ignoreWords": [
+        "agent",
+        "authenticode",
+        "build",
+        "choco",
+        "cmdletbinding",
+        "containerdata",
+        "hashtable",
+        "imatch",
+        "ireplace",
+        "keygen",
+        "lastexitcode",
+        "mkdocs",
+        "mutex",
+        "psake",
+        "psakefile",
+        "pwsh",
+        "remoting",
+        "runbook",
+        "runspaces",
+        "scriptblocks",
+        "scriptbook",
+        "scriptfile",
+        "set",
+        "signature",
+        "sourcebranchname",
+        "ssh",
+        "system",
+        "teamproject",
+        "tedon",
+        "whatif",
+        "workfolder"
+    ]
+}

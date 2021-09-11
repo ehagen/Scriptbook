@@ -1,0 +1,15 @@
+gen-docs/
+Output
+docs/Functions
+Tests/tmp
+coverage.xml
+Coverage-Pester.xml
+Test-Pester.XML
+Test-Pester.xml
+site/
+.DS_Store
+tmp
+.PublishSettings
+*.log
+TestExplorerResults.xml
+actions-hello-world-docker-action

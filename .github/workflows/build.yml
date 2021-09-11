@@ -1,0 +1,69 @@
+name: Build Scriptbook
+
+on:
+ push:
+  branches: [ master ]
+ pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: ./build/build.ps1
+        working-directory: ./
+        shell: pwsh
+
+      - name: Upload Build Output
+        uses: actions/upload-artifact@v2
+        with:
+          name: Scriptbook Module
+          path: ${{github.workspace}}/deploy/output
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: Test Results
+          path: ${{github.workspace}}/src/tests/*.xml
+
+      # only supported JUnit XML
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always() && ${{ runner.os == 'Linux' }}
+        with:
+          files: ${{github.workspace}}/src/tests/**/*.xml
+
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, windows-2016, ubuntu-latest, macos-latest]
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: ./build/build.ps1 Test
+        working-directory: ./
+        shell: pwsh
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: Matrix Test Results
+          path: ${{github.workspace}}/src/tests/*.xml
+
+      # publish not working on windows, disable for os windows
+      - name: Publish Matrix Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: ${{ runner.os == 'Linux' }}
+        with:
+          files: ${{github.workspace}}/src/tests/**/*.xml
