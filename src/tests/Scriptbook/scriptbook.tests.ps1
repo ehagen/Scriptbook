@@ -155,6 +155,28 @@ Describe 'with Functions Tests' {
             $script:rv | Should -Be 1
         }
 
+        It 'SimpleFlow with Always' {
+            $script:cnt = 0;
+            Action 'One' {
+                Write-Info $args.Name
+                Throw "Error in One.Always"
+                $script:cnt++
+            }
+            Action 'Two' {
+                Write-Info $args.Name
+                $script:cnt++
+            }
+            Action 'Three' -Always {
+                Write-Info $args.Name
+                $script:cnt++
+            }
+
+            Start-Workflow -Name SimpleFlowWithAlways -ErrorAction Continue
+
+            # assert
+            $script:cnt | Should -Be 1
+        }
+
         It 'SimpleFlow with If' {
             $script:cnt = 0;
             Action 'One' {

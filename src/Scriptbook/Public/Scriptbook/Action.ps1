@@ -69,6 +69,9 @@ Add Comment to Action for documentation purpose
 .PARAMETER SuppressOutput
 if present suppresses write/output of Action return value or output stream to console
 
+.PARAMETER Always
+Determines if Action is Always executed regardless of any error in other actions, or missing in dependency tree, or missing in Workflow Actions
+
 .PARAMETER Code
 Contains the action code/scriptblock to execute when action is enabled (default) 
 
@@ -111,6 +114,7 @@ function Action
         [string[]]$RequiredVariables = @(),
         [string]$Comment,
         [switch]$SuppressOutput,
+        [switch]$Always,
         [Parameter(Position = 1)]
         [ScriptBlock] $Code
     )
@@ -142,7 +146,7 @@ function Action
                 }
             }
         }
-        Register-Action -Name $Name -Tag $Tag -Depends $Depends -Parameters $Parameters -ErrorAction $ErrorActionPreference -AsJob:$AsJob.IsPresent -If $If -Description $Description -Code $Code -Disabled $Disabled.IsPresent -TypeName $PSCmdlet.MyInvocation.InvocationName -NextAction $NextAction -For $For -Parallel:$Parallel.IsPresent -Container:$Container.IsPresent -ContainerOptions $ContainerOptions -Session $Session -Isolated:$Isolated.IsPresent -Unique:$Unique.IsPresent -RequiredVariables $RequiredVariables -Comment $Comment -SuppressOutput:$SuppressOutput.IsPresent
+        Register-Action -Name $Name -Tag $Tag -Depends $Depends -Parameters $Parameters -ErrorAction $ErrorActionPreference -AsJob:$AsJob.IsPresent -If $If -Description $Description -Code $Code -Disabled $Disabled.IsPresent -TypeName $PSCmdlet.MyInvocation.InvocationName -NextAction $NextAction -For $For -Parallel:$Parallel.IsPresent -Container:$Container.IsPresent -ContainerOptions $ContainerOptions -Session $Session -Isolated:$Isolated.IsPresent -Unique:$Unique.IsPresent -RequiredVariables $RequiredVariables -Comment $Comment -SuppressOutput:$SuppressOutput.IsPresent -Always:$Always.IsPresent
     }
 
     # Start build-in Action: Start Workflow
