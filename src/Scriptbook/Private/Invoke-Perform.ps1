@@ -117,7 +117,7 @@ function Invoke-Perform
         {
             #Write-Verbose "Skipping action $cmdDisplayName If expression false"
             Write-ScriptLog @{action = "$($TypeName): $cmdDisplayName-Skipped"; time = $(Get-Date -Format s); } -AsSkipped
-            $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = 0; Indent = $Script:RootContext.IndentLevel; Exception = $null; ReturnValue = $null; Command = $Command; Comment = $Comment }
+            $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = 0; Indent = $Script:RootContext.IndentLevel; Exception = $null; HasError = $false; ReturnValue = $null; Command = $Command; Comment = $Comment }
             return;
         }
     }
@@ -137,6 +137,7 @@ function Invoke-Perform
     }
     
     $ex = $null
+    $hasError = $false # determines if exception has occurred but not how exception is handled. When ErrorPreference is 'Continue' exception is null but hasError is true
     $codeReturn = $null
     Push-Location $Script:WorkflowLocation
     $prevInAction = $Script:RootContext.InAction
@@ -235,6 +236,7 @@ function Invoke-Perform
                                     }
                                 }
                             } | ForEach-Object { $codeReturn += $_ }
+                            # TODO !!EH Pick-up if Exception --> hasError
                         }
                     }
                     elseif ($aAsJob)
@@ -293,6 +295,7 @@ function Invoke-Perform
                             } | Out-Null
                             Get-Job | Wait-Job | Out-Null
                             $codeReturn = Get-Job | Receive-Job
+                            # TODO !!EH Pick-up if Exception --> hasError
                             Get-Job | Remove-Job | Out-Null
                         }
                     }
@@ -326,6 +329,7 @@ function Invoke-Perform
                             }
                         }
                         $codeReturn = $r
+                        # TODO !!EH Pick-up if Exception --> hasError
                     }
                 }
                 elseif ($aAsJob)
@@ -372,6 +376,7 @@ function Invoke-Perform
                     {
                         $job | Wait-Job | Out-Null
                         $codeReturn = $job | Receive-Job
+                        # TODO !!EH Pick-up if Exception --> hasError
                         $job | Remove-Job | Out-Null
                     }
                 }
@@ -445,6 +450,7 @@ function Invoke-Perform
                         }
                         catch
                         {
+                            $hasError = $true
                             if ($invokeErrorAction -eq 'Continue')
                             {
                                 Write-ScriptLog $_.Exception.Message -AsError
@@ -471,6 +477,7 @@ function Invoke-Perform
                         }
                         catch
                         {
+                            $hasError = $true
                             if ($invokeErrorAction -eq 'Continue')
                             {
                                 Write-ScriptLog $_.Exception.Message -AsError
@@ -493,6 +500,7 @@ function Invoke-Perform
                     }
                     catch
                     {
+                        $hasError = $true
                         if ($invokeErrorAction -eq 'Continue')
                         {
                             Write-ScriptLog $_.Exception.Message -AsError
@@ -556,6 +564,7 @@ function Invoke-Perform
     }
     catch
     {
+        $hasError = $true
         if ($invokeErrorAction -eq 'Stop')
         {
             $ex = $_.Exception
@@ -590,7 +599,7 @@ function Invoke-Perform
         {
             $indent += 1
         }
-        $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = $commandStopwatch.Elapsed; Indent = $indent; Exception = $ex; ReturnValue = $codeReturn; Command = $Command; Comment = $Comment }
+        $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = $commandStopwatch.Elapsed; Indent = $indent; Exception = $ex; HasError = $hasError; ReturnValue = $codeReturn; Command = $Command; Comment = $Comment }
         Pop-Location
     }
 
