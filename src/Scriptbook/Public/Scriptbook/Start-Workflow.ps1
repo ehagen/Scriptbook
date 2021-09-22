@@ -264,7 +264,7 @@ function Start-Workflow
             Write-Info ''.PadRight(78, '-')
 
             $script:InvokedCommandsResult | ForEach-Object { if ($_.Exception) { $_.Exception = $_.Exception.Message } }
-            $script:InvokedCommandsResult | ForEach-Object { $_.Name = ''.PadLeft(($_.Indent) * 2, '-') + $_.Name }
+            $script:InvokedCommandsResult | ForEach-Object { $_.Name = ''.PadLeft(($_.Indent) + 1, '-') + $_.Name }
 
             if ($Documentation.IsPresent)
             {

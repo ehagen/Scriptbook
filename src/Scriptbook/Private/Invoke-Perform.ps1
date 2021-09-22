@@ -53,8 +53,11 @@ function Invoke-Perform
             if (!$dependency.StartsWith('Invoke-')) { $dependency = "Invoke-$dependency" }
             if ($dependency -NotIn $script:InvokedCommands)
             {
-                Invoke-PerformIfDefined -Command $dependency -ThrowError $true -Manual:$Manual.IsPresent
-                $Script:RootContext.IndentLevel += 1
+                if ($Command -notin $script:InvokedCommands)
+                {
+                    Invoke-PerformIfDefined -Command $dependency -ThrowError $true -Manual:$Manual.IsPresent
+                    $Script:RootContext.IndentLevel += 1
+                }
             }
         }
     }

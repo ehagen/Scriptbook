@@ -159,7 +159,7 @@ Describe 'with Functions Tests' {
             $script:cnt = 0;
             Action 'One' {
                 Write-Info $args.Name
-                Throw "Error in One.Always"
+                Throw "Positive test Error in One.Always"
                 $script:cnt++
             }
             Action 'Two' {
