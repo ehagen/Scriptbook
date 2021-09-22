@@ -115,6 +115,7 @@ function Start-Workflow
     $Global:LastExitCode = 0
     $script:InvokedCommands = @()
     $script:InvokedCommandsResult = @()
+    $workflowErrorAction = $ErrorActionPreference
     if ($WorkflowLocation)
     {
         $Script:WorkflowLocation = $WorkflowLocation
@@ -159,19 +160,26 @@ function Start-Workflow
             {
                 if (Global:Invoke-BeforeWorkflow -Commands $WorkflowActions)
                 {
-                    if ($null -ne $WorkflowActions -and ($WorkflowActions.count -gt 0) )
+                    try
                     {
-                        foreach ($action in $WorkflowActions)
+                        if ($null -ne $WorkflowActions -and ($WorkflowActions.count -gt 0) )
                         {
-                            if (!($action.StartsWith('!')))
+                            foreach ($action in $WorkflowActions)
                             {
-                                Invoke-PerformIfDefined -Command "Invoke-$($action.Replace('Invoke-', ''))" -ThrowError $true -ActionParameters $WorkflowParameters -NoDepends:$NoDepends.IsPresent -Test:$TestWorkflow.IsPresent -WhatIf:$isWhatIf
+                                if (!($action.StartsWith('!')))
+                                {
+                                    Invoke-PerformIfDefined -Command "Invoke-$($action.Replace('Invoke-', ''))" -ThrowError $true -ActionParameters $WorkflowParameters -NoDepends:$NoDepends.IsPresent -Test:$TestWorkflow.IsPresent -WhatIf:$isWhatIf
+                                }
                             }
                         }
+                        else
+                        {
+                            Invoke-ActionSequence -Actions $ctx.ActionSequence -ThrowError $true -Test:$TestWorkflow.IsPresent -WhatIf:$isWhatIf -Parallel:$WorkflowParallel.IsPresent
+                        }
                     }
-                    else
+                    finally
                     {
-                        Invoke-ActionSequence -Actions $ctx.ActionSequence -ThrowError $true -Test:$TestWorkflow.IsPresent -WhatIf:$isWhatIf -Parallel:$WorkflowParallel.IsPresent
+                        Invoke-ActionAlways -Actions $ctx.ActionSequence -ThrowError $true -Test:$TestWorkflow.IsPresent -WhatIf:$isWhatIf -Parallel:$WorkflowParallel.IsPresent
                     }
                 }
             }
@@ -182,11 +190,18 @@ function Start-Workflow
         }
         catch
         {
-            $hasErrors = $true
-            Write-ExceptionMessage $_ -TraceLineCnt 15
-            Global:Write-OnLogException -Exception $_.Exception
-            Global:Invoke-AfterWorkflow -Commands $WorkflowActions -ErrorRecord $_ | Out-Null
-            Throw
+            if ($workflowErrorAction -eq 'Continue')
+            {
+                Write-ExceptionMessage $_ -TraceLineCnt 15
+            }
+            elseif ($workflowErrorAction -notin 'Ignore', 'SilentlyContinue')
+            {
+                $hasErrors = $true
+                Write-ExceptionMessage $_ -TraceLineCnt 15
+                Global:Write-OnLogException -Exception $_.Exception
+                Global:Invoke-AfterWorkflow -Commands $WorkflowActions -ErrorRecord $_ | Out-Null    
+                Throw
+            }
         }
         if ($Global:LastExitCode -ne 0) 
         {
@@ -203,6 +218,10 @@ function Start-Workflow
         {            
             #TODO !!EH: Fix issue ansi escape sequences and Format-Table (invalid sizing)
             $script:InvokedCommandsResult | ForEach-Object { $hasErrors = if ($null -ne $_.Exception) { $true } else { $hasErrors }; <#if ($_.Exception) { $_.Name = "`e[37;41m$($_.Name)`e[0m" } else { $_.Name = "`e[00;00m$($_.Name)`e[0m" }; #> }
+            if ($workflowErrorAction -in 'Ignore', 'SilentlyContinue')
+            {
+                $hasErrors = $false
+            }
 
             if ($TestWorkflow.IsPresent)
             {
@@ -245,7 +264,7 @@ function Start-Workflow
             Write-Info ''.PadRight(78, '-')
 
             $script:InvokedCommandsResult | ForEach-Object { if ($_.Exception) { $_.Exception = $_.Exception.Message } }
-            $script:InvokedCommandsResult | ForEach-Object { $_.Name = ''.PadLeft(($_.Indent) * 2, '-') + $_.Name }
+            $script:InvokedCommandsResult | ForEach-Object { $_.Name = ''.PadLeft(($_.Indent) + 1, '-') + $_.Name }
 
             if ($Documentation.IsPresent)
             {

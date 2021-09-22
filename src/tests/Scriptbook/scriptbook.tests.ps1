@@ -155,6 +155,53 @@ Describe 'with Functions Tests' {
             $script:rv | Should -Be 1
         }
 
+        It 'SimpleFlow with Always' {
+            $script:cnt = 0;
+            Action 'One' {
+                Write-Info $args.Name
+                Throw "Positive test Error in One.Always"
+                $script:cnt++
+            }
+            Action 'Two' {
+                Write-Info $args.Name
+                $script:cnt++
+            }
+            Action 'Three' -Always {
+                Write-Info $args.Name
+                $script:cnt++
+            }
+
+            Start-Workflow -Name SimpleFlowWithAlways -ErrorAction Continue
+
+            # assert
+            $script:cnt | Should -Be 1
+        }
+
+        It 'SimpleFlow with check Action State' {
+            $script:cnt = 0;
+            Action 'One' -ErrorAction Continue {
+                Write-Info $args.Name
+                Throw "Error in One.CheckState"
+                $script:cnt++
+            }
+            Action 'Two' -if { (Get-ActionState -Name One).HasError } {
+                Write-Info $args.Name
+                $script:cnt++
+                $script:cnt++
+            }
+            Action 'Three' -if { !(Get-ActionState -Name Two).HasError } {
+                Write-Info $args.Name
+                $script:cnt++
+                $script:cnt++
+                $script:cnt++
+            }
+
+            Start-Workflow -Name SimpleFlowWithCheckActionState -ErrorAction Continue
+
+            # assert
+            $script:cnt | Should -Be 5
+        }
+
         It 'SimpleFlow with If' {
             $script:cnt = 0;
             Action 'One' {

@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Scriptbook.psm1'
-    ModuleVersion     = '0.5.00'
+    ModuleVersion     = '0.5.01'
     GUID              = '05a95b01-2890-480f-a4ac-f40bc52d6c82'
     Author            = 'Edwin Hagen'
     CompanyName       = 'Tedon Technology BV'
@@ -11,7 +11,7 @@
     FunctionsToExport = @(
         'Action', 'Enable-Action', 'Disable-Action', 'Get-ActionReturnValue', 'Import-Action', 'Invoke-Action', 'Invoke-ScriptBlock', 'Register-Action', 'Reset-Workflow', 'Start-Scriptbook', 'Start-Workflow', 'Use-Workflow',
         'Get-DecryptedSecret', 'Get-EncryptedSecret', 'Get-LocalCredential', 'Assert-Condition', 'Assert-Version',
-        'Get-BoundParametersWithDefaultValue', 'Set-EnvironmentVariable', 'Start-ShellCmd', 'Write-Info',
+        'Get-BoundParametersWithDefaultValue', 'Set-EnvironmentVar', 'Get-EnvironmentVar', 'Test-PSProperty', 'Get-PSPropertyValue', 'Start-ShellCmd', 'Write-Info',
         'FormatTaskName', 'Include', 'Invoke-Psake', 'Invoke-Task', 'Properties', 'Start-PSakeWorkflow', 'Task', 'TaskSetup', 'TaskTearDown'
     )
     CmdletsToExport   = @()

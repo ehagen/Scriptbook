@@ -16,9 +16,9 @@ Describe 'With Utilities Tests' {
         if (![string]::IsNullOrEmpty($r.StdErr)) { throw "Errors found in output shell command" }
     }
 
-    It 'Set-EnvironmentVariable' {
-        Set-EnvironmentVariable -n testVar -v testValue
-        $r = [Environment]::GetEnvironmentVariable('testVar')
+    It 'Set/Get-EnvironmentVariable' {
+        Set-EnvironmentVar -n testVar -v testValue
+        $r = Get-EnvironmentVar 'testVar'
         Assert-Condition ($r -eq 'testValue') -Message 'Set-Env value'
     }
 
@@ -42,6 +42,26 @@ Describe 'With Utilities Tests' {
 
         $d = 5.01
         Assert-Condition -v $d -o -eq -e 5.01 -m 'Error checking double condition'
+    }
+
+    It 'Get-PSPropertyAndGet-HasPSProperty' {
+
+        $obj = [PSCustomObject]@{
+            Prop1 = 'test'
+            Prop2 = 10
+        }
+
+        $v = Get-PSPropertyValue -o $obj -p Prop1
+        Assert-Condition -v $v -o -eq -e 'test' -m 'check prop value 1'
+
+        $v = Get-PSPropertyValue -o $obj -p Prop2
+        Assert-Condition -v $v -o -eq -e 10 -m 'check prop value 2'
+
+        $v = Get-PSPropertyValue -o $obj -p PropDoesNotExist
+        Assert-Condition -v $v -o -eq -e '' -m 'check prop value 3'
+
+        $v = Get-PSPropertyValue -o $obj -p PropDoesNotExist2 -Default $null
+        Assert-Condition ($v -eq $null) -m 'check prop value 4'
 
     }
 

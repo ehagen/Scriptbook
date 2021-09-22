@@ -23,7 +23,7 @@ function New-RootContext
         New-Object PSObject -Property @{
             Actions         = $actions
             ActionSequence  = $actionSequence
-            IndentLevel     = 0
+            IndentLevel     = -1
             NoLogging       = $false
             Id              = New-Guid
             InAction        = $false

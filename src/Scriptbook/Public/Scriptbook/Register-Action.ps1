@@ -26,6 +26,7 @@ Registers and validates a new Action for Workflow. Action is recorded but not ex
 .PARAMETER RequiredVariables
 .PARAMETER Comment
 .PARAMETER SuppressOutput
+.PARAMETER Always
 .PARAMETER Code
 
 .EXAMPLE
@@ -60,6 +61,7 @@ function Register-Action
         [string[]]$RequiredVariables,
         [string]$Comment,
         [switch]$SuppressOutput,
+        [switch]$Always,
         [ScriptBlock] $Code
     )
 
@@ -104,6 +106,7 @@ function Register-Action
         RequiredVariables = $RequiredVariables
         Comment           = ($text | Out-String)
         SuppressOutput    = $SuppressOutput
+        Always            = $Always
     }
     if ($ctx.Actions.ContainsKey($lAction.Name))
     {
