@@ -320,8 +320,12 @@ function Start-Workflow
         {
             Stop-Transcript
         }
-                
-        Reset-Workflow -WhatIf:$false -Soft
+        
+        if ($Script:RootContext)
+        {
+            $Script:PreviousRunContext = $Script:RootContext.PSObject.Copy()
+        }
+        Reset-Workflow -WhatIf:$false
     }
 
 }
