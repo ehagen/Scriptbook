@@ -176,18 +176,25 @@ else
         # now we check once a day the repository feed if new version are available 
         # to speed up the start-time of our workbooks
         $moduleCache = Get-Content -Path $cacheTimeFile -Raw | ConvertFrom-Json
-        if ($moduleCache.Time.Value -is [string])
+        try
         {
-            
-            $md = [System.DateTime]::Parse($moduleCache.Time.Value).Date
+            if ($moduleCache.Time.Value -is [string])
+            {            
+                $md = [System.DateTime]::Parse($moduleCache.Time.Value).Date
+            }
+            else
+            {
+                $md = $moduleCache.Time.Value.Date
+            }
+            if ($md -eq ((Get-Date).Date))
+            {
+                $checkModules = $false
+            }
         }
-        else
+        catch
         {
-            $md = $moduleCache.Time.Value.Date
-        }
-        if ($md -eq ((Get-Date).Date))
-        {
-            $checkModules = $false
+            # issues with reading dt values on different platforms
+            # reinitialize cache file
         }
     }
 }
