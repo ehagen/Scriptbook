@@ -1,3 +1,4 @@
+# TODO !!EH Convert $Script:PsakeProperties to list of scriptblocks to circumvent multiple allowed properties statements in psake scripts
 function Properties
 {
     [CmdletBinding()]

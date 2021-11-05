@@ -15,7 +15,7 @@ Value of the environment variable
 Forces environment variable name to UpperCase
 
 #>
-function Set-EnvironmentVariable
+function Set-EnvironmentVar
 {
     [CmdletBinding(SupportsShouldProcess = $True)]
     param(

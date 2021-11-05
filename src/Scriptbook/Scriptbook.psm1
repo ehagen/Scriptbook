@@ -175,19 +175,29 @@ else
         # determine if we need to load the modules from repository again
         # now we check once a day the repository feed if new version are available 
         # to speed up the start-time of our workbooks
+        $md = $null
         $moduleCache = Get-Content -Path $cacheTimeFile -Raw | ConvertFrom-Json
-        if ($moduleCache.Time.Value -is [string])
+        if (Test-PSProperty -Object $moduleCache -Name 'Time') 
         {
-            
-            $md = [System.DateTime]::Parse($moduleCache.Time.Value).Date
-        }
-        else
-        {
-            $md = $moduleCache.Time.Value.Date
-        }
-        if ($md -eq ((Get-Date).Date))
-        {
-            $checkModules = $false
+            if (Test-PSProperty -Object $moduleCache.Time -Name 'Value')
+            {
+                if ($moduleCache.Time.Value -is [string])
+                {            
+                    $md = [System.DateTime]::Parse($moduleCache.Time.Value).Date
+                }
+                elseif ($moduleCache.Time.Value -is [DateTime])
+                {
+                    $md = $moduleCache.Time.Value.Date
+                }
+            }
+            else
+            {
+                $md = [System.DateTime]::Parse($moduleCache.Time).Date
+            }
+            if ($md -and ($md -eq ((Get-Date).Date)))
+            {
+                $checkModules = $false
+            }
         }
     }
 }
@@ -223,6 +233,8 @@ if ($depends)
         {
             continue
         }
+
+        $skipPublisherCheck = if ($dependency.ContainsKey('SkipPublisherCheck')) { $dependency.SkipPublisherCheck } else { $false }
 
         $minimumVersion = if ($dependency.ContainsKey('MinimumVersion')) { $dependency.MinimumVersion } else { '' }
         $maximumVersion = if ($dependency.ContainsKey('MaximumVersion')) { $dependency.MaximumVersion } else { '' }
@@ -302,7 +314,7 @@ if ($depends)
                 {
                     Write-Warning "Module $($dependency.Module) not installed by Install-Module, cannot update module via Update-Module, using forced Install-Module"
                     Write-Verbose "Installing module $($dependency.Module)"
-                    Install-Module -Name $dependency.Module -Force -Repository $repository -Scope CurrentUser -MinimumVersion $minimumVersion -MaximumVersion $maximumVersion -AllowClobber @extraParams
+                    Install-Module -Name $dependency.Module -Force -Repository $repository -Scope CurrentUser -MinimumVersion $minimumVersion -MaximumVersion $maximumVersion -AllowClobber -SkipPublisherCheck:$skipPublisherCheck @extraParams
                 }
             }
         }
@@ -310,7 +322,7 @@ if ($depends)
         {
             Write-Verbose "Installing module $($dependency.Module)"
             # TODO !!EH using -Force to install from untrusty repositories or do we need to handle this via Force attribute
-            Install-Module -Name $dependency.Module -Force -Repository $repository -Scope CurrentUser -MinimumVersion $minimumVersion -MaximumVersion $maximumVersion -AllowClobber @extraParams
+            Install-Module -Name $dependency.Module -Force -Repository $repository -Scope CurrentUser -MinimumVersion $minimumVersion -MaximumVersion $maximumVersion -AllowClobber -SkipPublisherCheck:$skipPublisherCheck @extraParams
         }
 
         if ($dependency.ContainsKey('Args'))
