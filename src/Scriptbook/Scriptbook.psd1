@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Scriptbook.psm1'
-    ModuleVersion     = '0.5.02'
+    ModuleVersion     = '0.5.3'
     GUID              = '05a95b01-2890-480f-a4ac-f40bc52d6c82'
     Author            = 'Edwin Hagen'
     CompanyName       = 'Tedon Technology BV'
