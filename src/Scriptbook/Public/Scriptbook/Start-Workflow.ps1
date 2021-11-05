@@ -316,12 +316,25 @@ function Start-Workflow
             Write-Info ''.PadRight(78, '-')
         }
 
+        $ctx = Get-RootContext
+        if ($ctx.Notifications.Count -gt 0)
+        {
+            foreach ($notification in $ctx.Notifications)
+            {
+                Write-Info ($notification | Out-String)
+            }
+        }
+
         if ($WorkflowTranscript.IsPresent)
         {
             Stop-Transcript
         }
-                
-        Reset-Workflow -WhatIf:$false -Soft
+        
+        if ($Script:RootContext)
+        {
+            $Script:PreviousRunContext = $Script:RootContext.PSObject.Copy()
+        }
+        Reset-Workflow -WhatIf:$false
     }
 
 }

@@ -175,19 +175,29 @@ else
         # determine if we need to load the modules from repository again
         # now we check once a day the repository feed if new version are available 
         # to speed up the start-time of our workbooks
+        $md = $null
         $moduleCache = Get-Content -Path $cacheTimeFile -Raw | ConvertFrom-Json
-        if ($moduleCache.Time.Value -is [string])
+        if (Test-PSProperty -Object $moduleCache -Name 'Time') 
         {
-            
-            $md = [System.DateTime]::Parse($moduleCache.Time.Value).Date
-        }
-        else
-        {
-            $md = $moduleCache.Time.Value.Date
-        }
-        if ($md -eq ((Get-Date).Date))
-        {
-            $checkModules = $false
+            if (Test-PSProperty -Object $moduleCache.Time -Name 'Value')
+            {
+                if ($moduleCache.Time.Value -is [string])
+                {            
+                    $md = [System.DateTime]::Parse($moduleCache.Time.Value).Date
+                }
+                elseif ($moduleCache.Time.Value -is [DateTime])
+                {
+                    $md = $moduleCache.Time.Value.Date
+                }
+            }
+            else
+            {
+                $md = [System.DateTime]::Parse($moduleCache.Time).Date
+            }
+            if ($md -and ($md -eq ((Get-Date).Date)))
+            {
+                $checkModules = $false
+            }
         }
     }
 }

@@ -13,3 +13,4 @@ tmp
 *.log
 TestExplorerResults.xml
 actions-hello-world-docker-action
+.DS_Store
