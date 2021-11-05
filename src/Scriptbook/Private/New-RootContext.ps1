@@ -10,6 +10,7 @@ function New-RootContext
         $actions = New-Object -TypeName 'System.Collections.Generic.Dictionary[String,object]' -ArgumentList @([System.StringComparer]::InvariantCultureIgnoreCase)
         $actionSequence  = New-Object -TypeName 'System.Collections.ArrayList'
         $infos = New-Object -TypeName 'System.Collections.ArrayList'
+        $notifications = New-Object -TypeName 'System.Collections.ArrayList'
         if ($Soft.IsPresent)
         {
             if ($Script:RootContext)
@@ -17,6 +18,7 @@ function New-RootContext
                 $actions = $Script:RootContext.Actions
                 $actionSequence = $Script:RootContext.ActionSequence
                 $infos = $Script:RootContext.Infos
+                $notifications = $Script:RootContext.Notifications
             }
         }
 
@@ -30,6 +32,7 @@ function New-RootContext
             NestedActions   = New-Object -TypeName 'System.Collections.ArrayList'
             UniqueIdCounter = 1
             Infos           = $infos
+            Notifications   = $notifications
         }    
     }
 }

@@ -435,6 +435,10 @@ Describe 'with Functions Tests' {
                     Write-Info 'Two.One'
                     $script:cnt++
                 }
+
+                Add-WorkflowNotification 'Use url: https://sample.com'
+                Add-WorkflowNotification ''.PadRight(78, '-')
+
             }
 
             Start-flow -Name 'SimpleFlow With Nested actions'
