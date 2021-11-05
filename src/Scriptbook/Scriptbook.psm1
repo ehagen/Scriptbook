@@ -175,11 +175,24 @@ else
         # determine if we need to load the modules from repository again
         # now we check once a day the repository feed if new version are available 
         # to speed up the start-time of our workbooks
+
+        function TestPropInt2([object]$Object, [string]$Name)
+        {
+            foreach ($prop in $Object.PSObject.Properties)
+            {
+                if ($prop.Name -eq $Name)
+                {
+                    return $true
+                }
+            }
+            return $false
+        }
+
         $md = $null
         $moduleCache = Get-Content -Path $cacheTimeFile -Raw | ConvertFrom-Json
-        if (Test-PSProperty -Object $moduleCache -Name 'Time') 
+        if (TestPropInt2 -Object $moduleCache -Name 'Time') 
         {
-            if (Test-PSProperty -Object $moduleCache.Time -Name 'Value')
+            if (TestPropInt2 -Object $moduleCache.Time -Name 'Value')
             {
                 if ($moduleCache.Time.Value -is [string])
                 {            

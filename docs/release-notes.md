@@ -4,7 +4,16 @@
 ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/Scriptbook.svg?label=PSGallery%20Downloads&logo=PowerShell&style=flat-square)
 [![Build Status](https://dev.azure.com/tedon/TD.Deploy/_apis/build/status/ehagen.Scriptbook?branchName=master)](https://dev.azure.com/tedon/TD.Deploy/_build/latest?definitionId=52&branchName=master)
 
-## [0.5.02]
+## [0.5.3]
+
+```plain
+### Fixed
+
+- Fixed double load module by removing internal reference
+
+```
+
+## [0.5.2]
 
 ```plain
 ### Added
@@ -19,7 +28,7 @@
 
 ```
 
-## [0.5.01]
+## [0.5.1]
 
 ```plain
 ### Added
