@@ -17,6 +17,7 @@ Ignores casing by checking ToLower and ToUpper variants
 #>
 function Get-EnvironmentVar
 {
+    [OutputType([string])]
     param([alias('n')][string]$Name, [alias('d')][string]$Default = $null, [switch]$IgnoreCasing)
 
     $r = [Environment]::GetEnvironmentVariable($Name);

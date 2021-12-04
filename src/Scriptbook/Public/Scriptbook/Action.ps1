@@ -72,6 +72,9 @@ if present suppresses write/output of Action return value or output stream to co
 .PARAMETER Always
 Determines if Action is Always executed regardless of any error in other actions, or missing in dependency tree, or missing in Workflow Actions
 
+.PARAMETER NoSequence
+Determines if Action is executed when sequential/linear Workflow is executed
+
 .PARAMETER Code
 Contains the action code/scriptblock to execute when action is enabled (default) 
 
@@ -80,16 +83,15 @@ Contains the action code/scriptblock to execute when action is enabled (default)
 .NOTES
 
 #>
-Set-Alias -Name Test -Value Action -Scope Global -Force -WhatIf:$false
-Set-Alias -Name Step -Value Action -Scope Global -Force -WhatIf:$false
-Set-Alias -Name Activity -Value Action -Scope Global -Force -WhatIf:$false
-Set-Alias -Name Job -Value Action -Scope Global -Force -WhatIf:$false
-Set-Alias -Name Chore -Value Action -Scope Global -Force -WhatIf:$false
-Set-Alias -Name Stage -Value Action -Scope Global -Force -WhatIf:$false
-Set-Alias -Name Override -Value Action -WhatIf:$false
+Set-Alias -Name Test -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
+Set-Alias -Name Step -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
+Set-Alias -Name Activity -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
+Set-Alias -Name Job -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
+Set-Alias -Name Chore -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
+Set-Alias -Name Stage -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
+Set-Alias -Name Override -Value Action -WhatIf:$false -Confirm:$False
 function Action
 {
-    [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
         [String[]] $Tag = @(),
@@ -101,7 +103,7 @@ function Action
         [ScriptBlock] $If,
         [alias('Skip')][switch] $Disabled,
         [ValidateNotNullOrEmpty()]
-        [string][alias('next')] $NextAction,
+        [string][alias('Next')] $NextAction,
         [ScriptBlock] $For,
         [switch] $Parallel,
         [switch] $Container,
@@ -115,6 +117,9 @@ function Action
         [string]$Comment,
         [switch]$SuppressOutput,
         [switch]$Always,
+        [switch]$NoSequence,
+        [switch]$WhatIf,
+        [switch]$Confirm,
         [Parameter(Position = 1)]
         [ScriptBlock] $Code
     )
@@ -146,7 +151,7 @@ function Action
                 }
             }
         }
-        Register-Action -Name $Name -Tag $Tag -Depends $Depends -Parameters $Parameters -ErrorAction $ErrorActionPreference -AsJob:$AsJob.IsPresent -If $If -Description $Description -Code $Code -Disabled $Disabled.IsPresent -TypeName $PSCmdlet.MyInvocation.InvocationName -NextAction $NextAction -For $For -Parallel:$Parallel.IsPresent -Container:$Container.IsPresent -ContainerOptions $ContainerOptions -Session $Session -Isolated:$Isolated.IsPresent -Unique:$Unique.IsPresent -RequiredVariables $RequiredVariables -Comment $Comment -SuppressOutput:$SuppressOutput.IsPresent -Always:$Always.IsPresent
+        Register-Action -Name $Name -Tag $Tag -Depends $Depends -Parameters $Parameters -ErrorAction $ErrorActionPreference -AsJob:$AsJob.IsPresent -If $If -Description $Description -Code $Code -Disabled $Disabled.IsPresent -TypeName $PSCmdlet.MyInvocation.InvocationName -NextAction $NextAction -For $For -Parallel:$Parallel.IsPresent -Container:$Container.IsPresent -ContainerOptions $ContainerOptions -Session $Session -Isolated:$Isolated.IsPresent -Unique:$Unique.IsPresent -RequiredVariables $RequiredVariables -Comment $Comment -SuppressOutput:$SuppressOutput.IsPresent -Always:$Always.IsPresent -NoSequence:$NoSequence.IsPresent -WhatIf:$WhatIf.IsPresent -Confirm:$Confirm.IsPresent
     }
 
     # Start build-in Action: Start Workflow

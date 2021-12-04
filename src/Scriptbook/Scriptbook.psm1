@@ -80,8 +80,14 @@ if ($core)
     }
 }
 
+$Global:ScriptbookSimpleHost = $false
+if ($ImportVars -and $ImportVars.ContainsKey('SimpleHost'))
+{
+    $Global:ScriptbookSimpleHost = $ImportVars.SimpleHost
+}
+
 $checkModules = $true
-$cacheTimeFile = Join-Path $home './cacheTimeFile.json'
+$cacheTimeFile = Join-Path $home './Scriptbook.ModuleCache.json'
 
 $importFormat = 'Scriptbook'
 # load dependencies from file if not override by arguments
@@ -247,95 +253,98 @@ if ($depends)
             continue
         }
 
-        $skipPublisherCheck = if ($dependency.ContainsKey('SkipPublisherCheck')) { $dependency.SkipPublisherCheck } else { $false }
-
-        $minimumVersion = if ($dependency.ContainsKey('MinimumVersion')) { $dependency.MinimumVersion } else { '' }
-        $maximumVersion = if ($dependency.ContainsKey('MaximumVersion')) { $dependency.MaximumVersion } else { '' }
-
-        $extraParams = @{}
-        $credentialLocation = if ($dependency.ContainsKey('Credential')) { $dependency.Credential } else { $null }
-        if ($credentialLocation)
+        if (!(Test-Path $dependency.Module))
         {
-            if ($credentialLocation.StartsWith('https://'))
-            {
-                # dependency on TD.Util Module, load this module first
-                if (Get-Command Get-AzureDevOpsCredential -ErrorAction Ignore)
-                {
-                    $cred = Get-AzureDevOpsCredential -Url $credentialLocation
-                    $extraParams.Add('Credential', $cred) | Out-Null
-                }
-            }
-            else
-            {
-                try
-                {
-                    $cred = Get-LocalCredential -Name $credentialLocation
-                    $extraParams.Add('Credential', $cred) | Out-Null
-                }
-                catch
-                {
-                    Write-Warning $_.Exception.Message
-                }                
-            }
-        }
+            $skipPublisherCheck = if ($dependency.ContainsKey('SkipPublisherCheck')) { $dependency.SkipPublisherCheck } else { $false }
 
-        $repository = if ($dependency.ContainsKey('Repository')) { $dependency.Repository } else { 'PSGallery' }
-        if ($repository -ne 'PSGallery')
-        {
-            $repo = Get-PSRepository -Name $repository -ErrorAction Ignore
-            if ($null -eq $repo)
-            {
-                $repositoryUrl = if ($dependency.ContainsKey('RepositoryUrl')) { $dependency.RepositoryUrl } else { $null }
-                if ($repositoryUrl)
-                {
-                    if (Get-Command Register-AzureDevOpsPackageSource -ErrorAction Ignore)
-                    {
-                        Register-AzureDevOpsPackageSource -Name $repository -Url $repositoryUrl @extraParams
-                    }
-                    else
-                    {
-                        Register-PSRepository -Name $repository -SourceLocation $repositoryUrl -InstallationPolicy Trusted @extraParams
-                    }
-                }
-            }
-        }
+            $minimumVersion = if ($dependency.ContainsKey('MinimumVersion')) { $dependency.MinimumVersion } else { '' }
+            $maximumVersion = if ($dependency.ContainsKey('MaximumVersion')) { $dependency.MaximumVersion } else { '' }
 
-        if (Get-Module -Name $dependency.Module -ListAvailable -ErrorAction Ignore)
-        {
-            if ($checkModules)
+            $extraParams = @{}
+            $credentialLocation = if ($dependency.ContainsKey('Credential')) { $dependency.Credential } else { $null }
+            if ($credentialLocation)
             {
-                if ($null -ne (Get-InstalledModule -Name $dependency.Module -ErrorAction Ignore) )
-                {                
-                    $force = if ($dependency.ContainsKey('Force')) { $dependency.Force } else { $false }
-                    if ($minimumVersion)
+                if ($credentialLocation.StartsWith('https://'))
+                {
+                    # dependency on TD.Util Module, load this module first
+                    if (Get-Command Get-AzureDevOpsCredential -ErrorAction Ignore)
                     {
-                        $v1 = (Get-Module -Name $dependency.Module -ListAvailable | Select-Object -First 1).Version
-                        $v2 = [version]$minimumVersion
-                        if ($v2 -gt $v1)
-                        {
-                            Write-Verbose "Updating module $($dependency.Module) with MinimumVersion $minimumVersion"
-                            Update-Module -Name $dependency.Module -Force:$force -RequiredVersion $minimumVersion @extraParams
-                        }
-                    }
-                    else
-                    {
-                        Write-Verbose "Updating module $($dependency.Module) with MaximumVersion $maximumVersion"
-                        Update-Module -Name $dependency.Module -Force:$force -MaximumVersion $maximumVersion @extraParams
+                        $cred = Get-AzureDevOpsCredential -Url $credentialLocation
+                        $extraParams.Add('Credential', $cred) | Out-Null
                     }
                 }
                 else
                 {
-                    Write-Warning "Module $($dependency.Module) not installed by Install-Module, cannot update module via Update-Module, using forced Install-Module"
-                    Write-Verbose "Installing module $($dependency.Module)"
-                    Install-Module -Name $dependency.Module -Force -Repository $repository -Scope CurrentUser -MinimumVersion $minimumVersion -MaximumVersion $maximumVersion -AllowClobber -SkipPublisherCheck:$skipPublisherCheck @extraParams
+                    try
+                    {
+                        $cred = Get-LocalCredential -Name $credentialLocation
+                        $extraParams.Add('Credential', $cred) | Out-Null
+                    }
+                    catch
+                    {
+                        Write-Warning $_.Exception.Message
+                    }                
                 }
             }
-        }
-        else
-        {
-            Write-Verbose "Installing module $($dependency.Module)"
-            # TODO !!EH using -Force to install from untrusty repositories or do we need to handle this via Force attribute
-            Install-Module -Name $dependency.Module -Force -Repository $repository -Scope CurrentUser -MinimumVersion $minimumVersion -MaximumVersion $maximumVersion -AllowClobber -SkipPublisherCheck:$skipPublisherCheck @extraParams
+
+            $repository = if ($dependency.ContainsKey('Repository')) { $dependency.Repository } else { 'PSGallery' }
+            if ($repository -ne 'PSGallery')
+            {
+                $repo = Get-PSRepository -Name $repository -ErrorAction Ignore
+                if ($null -eq $repo)
+                {
+                    $repositoryUrl = if ($dependency.ContainsKey('RepositoryUrl')) { $dependency.RepositoryUrl } else { $null }
+                    if ($repositoryUrl)
+                    {
+                        if (Get-Command Register-AzureDevOpsPackageSource -ErrorAction Ignore)
+                        {
+                            Register-AzureDevOpsPackageSource -Name $repository -Url $repositoryUrl @extraParams
+                        }
+                        else
+                        {
+                            Register-PSRepository -Name $repository -SourceLocation $repositoryUrl -InstallationPolicy Trusted @extraParams
+                        }
+                    }
+                }
+            }
+
+            if (Get-Module -Name $dependency.Module -ListAvailable -ErrorAction Ignore)
+            {
+                if ($checkModules)
+                {
+                    if ($null -ne (Get-InstalledModule -Name $dependency.Module -ErrorAction Ignore) )
+                    {                
+                        $force = if ($dependency.ContainsKey('Force')) { $dependency.Force } else { $false }
+                        if ($minimumVersion)
+                        {
+                            $v1 = (Get-Module -Name $dependency.Module -ListAvailable | Select-Object -First 1).Version
+                            $v2 = [version]$minimumVersion
+                            if ($v2 -gt $v1)
+                            {
+                                Write-Verbose "Updating module $($dependency.Module) with MinimumVersion $minimumVersion"
+                                Update-Module -Name $dependency.Module -Force:$force -RequiredVersion $minimumVersion @extraParams
+                            }
+                        }
+                        else
+                        {
+                            Write-Verbose "Updating module $($dependency.Module) with MaximumVersion $maximumVersion"
+                            Update-Module -Name $dependency.Module -Force:$force -MaximumVersion $maximumVersion @extraParams
+                        }
+                    }
+                    else
+                    {
+                        Write-Warning "Module $($dependency.Module) not installed by Install-Module, cannot update module via Update-Module, using forced Install-Module"
+                        Write-Verbose "Installing module $($dependency.Module)"
+                        Install-Module -Name $dependency.Module -Force -Repository $repository -Scope CurrentUser -MinimumVersion $minimumVersion -MaximumVersion $maximumVersion -AllowClobber -SkipPublisherCheck:$skipPublisherCheck @extraParams
+                    }
+                }
+            }
+            else
+            {
+                Write-Verbose "Installing module $($dependency.Module)"
+                # TODO !!EH using -Force to install from untrusty repositories or do we need to handle this via Force attribute
+                Install-Module -Name $dependency.Module -Force -Repository $repository -Scope CurrentUser -MinimumVersion $minimumVersion -MaximumVersion $maximumVersion -AllowClobber -SkipPublisherCheck:$skipPublisherCheck @extraParams
+            }
         }
 
         if ($dependency.ContainsKey('Args'))

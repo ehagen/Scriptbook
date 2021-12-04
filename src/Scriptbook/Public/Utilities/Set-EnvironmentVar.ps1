@@ -18,6 +18,7 @@ Forces environment variable name to UpperCase
 function Set-EnvironmentVar
 {
     [CmdletBinding(SupportsShouldProcess = $True)]
+    [OutputType([System.Void])]
     param(
         [alias('n')][string]
         $Name,

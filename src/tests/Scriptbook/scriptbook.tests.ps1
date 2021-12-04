@@ -113,12 +113,12 @@ Describe 'with Functions Tests' {
             }
 
             Action GoodBy -ErrorAction Ignore {
-                Write-Info "GoodBy"
+                "GoodBy" | Out-ScriptbookHost
                 $script:cnt++
             }
 
             Action GoodByWrong -ErrorAction Ignore {
-                Write-Info "GoodByWrong"
+                "GoodByWrong" | Out-Info
                 Throw "MyException from GoodBy"
                 $script:cnt++
             }
@@ -447,6 +447,38 @@ Describe 'with Functions Tests' {
             $script:cnt | Should -Be 4
         }
 
+        It 'Workflow with Action selection' {
+            # arrange
+            $script:cnt = 0;
+
+            # act
+            Action Hello {
+                Write-Info "Hello"
+                $script:cnt++
+            }
+
+            Action Hello2 {
+                Write-Info "Hello2"
+                $script:cnt++
+            }
+
+            Action Hello3 {
+                Write-Info "Hello3"
+                $script:cnt++
+            }
+
+            Action GoodBy {
+                Write-Info "GoodBy"
+                $script:cnt++
+            }
+
+
+            Start-Workflow Hello* -Name 'Workflow with Action selection'
+
+            # assert
+            $script:cnt | Should -Be 3
+        }
+    
     }
 
 }

@@ -34,7 +34,7 @@ function Invoke-ActionSequence
             $mp = (Get-Module Scriptbook).Path
             $globalScriptVariables = Get-GlobalVarsForScriptblock -AsHashTable
             $rc = Get-RootContext
-            $Actions | ForEach-Object -Parallel {
+            $Actions | Where-Object { $_.NoSequence -eq $false} | ForEach-Object -Parallel {
                 $vars = $using:globalScriptVariables
                 foreach ($v in $vars.GetEnumerator())
                 {
@@ -51,6 +51,9 @@ function Invoke-ActionSequence
     # sequential
     foreach ($action in $Actions)
     {
-        Invoke-PerformIfDefined -Command $action.Name -ThrowError $ThrowError -Test:$Test.IsPresent -WhatIf:$WhatIfPreference
+        if (!$action.NoSequence)
+        {
+            Invoke-PerformIfDefined -Command $action.Name -ThrowError $ThrowError -Test:$Test.IsPresent -WhatIf:$WhatIfPreference
+        }
     }                    
 }
