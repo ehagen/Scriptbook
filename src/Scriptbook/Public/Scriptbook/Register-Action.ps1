@@ -35,6 +35,7 @@ Register-Action
 #>
 function Register-Action
 {
+    [OutputType([System.Void])]
     param(
         [Parameter(Mandatory = $true, Position = 0)][string][ValidateNotNullOrEmpty()]$Name,
         [switch]$IsGroup,
@@ -62,6 +63,9 @@ function Register-Action
         [string]$Comment,
         [switch]$SuppressOutput,
         [switch]$Always,
+        [switch]$NoSequence,
+        [switch]$WhatIf,
+        [switch]$Confirm,
         [ScriptBlock] $Code
     )
 
@@ -107,6 +111,9 @@ function Register-Action
         Comment           = ($text | Out-String)
         SuppressOutput    = $SuppressOutput
         Always            = $Always
+        NoSequence        = $NoSequence
+        WhatIf        = $WhatIf
+        Confirm        = $Confirm
     }
     if ($ctx.Actions.ContainsKey($lAction.Name))
     {
@@ -124,5 +131,5 @@ function Register-Action
         [void]$ctx.ActionSequence.Add($lAction)
     }
     [void]$ctx.Actions.Add($lAction.Name, $lAction)
-    Set-Alias -Name $Name -Value Action -Scope Global -Force -ErrorAction Ignore -WhatIf:$false
+    Set-Alias -Name $Name -Value Action -Scope Global -Force -ErrorAction Ignore -WhatIf:$false -Confirm:$False
 }

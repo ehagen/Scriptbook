@@ -4,6 +4,26 @@
 ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/Scriptbook.svg?label=PSGallery%20Downloads&logo=PowerShell&style=flat-square)
 [![Build Status](https://dev.azure.com/tedon/TD.Deploy/_apis/build/status/ehagen.Scriptbook?branchName=master)](https://dev.azure.com/tedon/TD.Deploy/_build/latest?definitionId=52&branchName=master)
 
+## [0.5.4]
+
+```plain
+### Added
+
+- Added loading dependant modules from file path in Import-Module Scriptbook
+- Added skipping action when Workflow is executed sequentially (extracted from sequence). Use -NoSequence switch on Action
+- Added selecting 'Workflow Start Action' with wildcards, like Start-Workflow -Actions 'Hello*','Goodby*' or Start-Workflow -Actions *
+- Added Action -Confirm switch support
+- Added Action -WhatIf switch support
+- Added Out-ScriptbookHost/Out-Info
+- Added support for Simple Powershell Hosts which do not support ansi-escape codes (Azure Automation for example)
+
+### Changed
+
+- Renamed module cache file in $home to Scriptbook.ModuleCache.json
+- Updated Workflow Report with display of Skipped actions
+
+```
+
 ## [0.5.3]
 
 ```plain

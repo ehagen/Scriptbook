@@ -40,6 +40,7 @@ Start-ShellCmd -c 'pwsh' -a '-Command Get-Service' | Out-Null
 function Start-ShellCmd
 {
     [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([PSCustomObject])]
     param(
         [alias('c')]
         $Command,

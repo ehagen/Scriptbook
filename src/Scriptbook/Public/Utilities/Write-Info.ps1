@@ -24,6 +24,7 @@ Specifies the background color.
 function Write-Info
 {
     [CmdletBinding()]
+    [OutputType([System.Void])]
     param(
         [parameter(ValueFromPipeline = $True)]
         $Object,

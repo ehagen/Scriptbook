@@ -46,7 +46,7 @@ function Invoke-PerformIfDefined
         if ($ActionParameters) { $ap = $ActionParameters } else { $ap = $action.Parameters }
         if ($AsJob) { $aj = $true } else { $aj = $action.AsJob }
         #TODO/FIXME !!EH Put action into separate method?
-        Invoke-Perform -Command $action.Name -Code $action.Code -Depends $action.Depends -ErrorAction $action.ErrorAction -ActionParameters @{Name = $action.DisplayName; ActionName = $action.DisplayName; Tag = $action.Tags; Parameters = $ap } -NoReEntry $NoReEntry -AsJob $aj -If $action.If -NoDepends:$NoDepends.IsPresent -WhatIf:$WhatIfPreference -NextAction $Action.NextAction -For $action.For -Parallel:$action.Parallel -Container:$action.Container -ContainerOptions:$action.ContainerOptions -Session $action.Session -Isolated:$action.Isolated -Manual:$Manual.IsPresent -TypeName $action.TypeName -RequiredVariables $action.RequiredVariables -Comment $action.Comment -SuppressOutput:$action.SuppressOutput
+        Invoke-Perform -Command $action.Name -Code $action.Code -Depends $action.Depends -ErrorAction $action.ErrorAction -ActionParameters @{Name = $action.DisplayName; ActionName = $action.DisplayName; Tag = $action.Tags; Parameters = $ap } -NoReEntry $NoReEntry -AsJob $aj -If $action.If -NoDepends:$NoDepends.IsPresent -NextAction $Action.NextAction -For $action.For -Parallel:$action.Parallel -Container:$action.Container -ContainerOptions:$action.ContainerOptions -Session $action.Session -Isolated:$action.Isolated -Manual:$Manual.IsPresent -TypeName $action.TypeName -RequiredVariables $action.RequiredVariables -Comment $action.Comment -SuppressOutput:$action.SuppressOutput -ConfirmAction:$action.Confirm -WhatIfAction:$action.WhatIf
     }
     else
     {

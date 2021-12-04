@@ -32,6 +32,7 @@ myFunction @parameters
 function Get-BoundParametersWithDefaultValue
 {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
+    [OutputType([HashTable])]
     param(
         $Invocation = $Global:MyInvocation
     )

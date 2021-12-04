@@ -25,7 +25,9 @@ function Invoke-Perform
         [string]$TypeName,
         [string[]]$RequiredVariables,
         $Comment,
-        [switch]$SuppressOutput
+        [switch]$SuppressOutput,
+        [switch]$ConfirmAction,
+        [switch]$WhatIfAction
     )
 
     $invokeErrorAction = $ErrorActionPreference
@@ -69,6 +71,7 @@ function Invoke-Perform
     }
 
     $cmdDisplayName = $Command.Replace('Action-', '').Replace('Invoke-', '')
+    $skipped = $false
 
     # Re-apply PSake properties and Parameters in Scope
     try
@@ -118,15 +121,16 @@ function Invoke-Perform
         $ifResult = & $If
         if (!$ifResult)
         {
-            #Write-Verbose "Skipping action $cmdDisplayName If expression false"
-            Write-ScriptLog @{action = "$($TypeName): $cmdDisplayName-Skipped"; time = $(Get-Date -Format s); } -AsSkipped
-            $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = 0; Indent = $Script:RootContext.IndentLevel; Exception = $null; HasError = $false; ReturnValue = $null; Command = $Command; Comment = $Comment }
+            $skipped = $true
+            Write-ScriptLog @{action = "$($TypeName): $cmdDisplayName"; time = $(Get-Date -Format s); } -AsAction
+            Write-Info 'Skipped:'
+            $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = 0; Indent = $Script:RootContext.IndentLevel; Exception = $null; HasError = $false; ReturnValue = $null; Command = $Command; Comment = $Comment; Confirm = $ConfirmAction; WhatIf = $WhatIfPreference; Skipped = $Skipped }
             return;
         }
     }
 
     $commandStopwatch = [System.Diagnostics.Stopwatch]::StartNew();
-    Write-ScriptLog @{action = "$($TypeName): `e[0;36m$($cmdDisplayName)`e[0m"; time = $(Get-Date -Format s); } -AsAction
+    Write-ScriptLog @{action = "$($TypeName): $(Get-AnsiColoredString -String $cmdDisplayName -Color 36 )"; time = $(Get-Date -Format s); } -AsAction
 
     Write-ScriptLog @{action = "$cmdDisplayName-Started"; time = $(Get-Date -Format s); } -AsAction -Verbose
 
@@ -145,10 +149,30 @@ function Invoke-Perform
     Push-Location $Script:WorkflowLocation
     $prevInAction = $Script:RootContext.InAction
     $prevNestedActions = $Script:RootContext.NestedActions
+    $prevWhatIfPreference = $WhatIfPreference
     $Script:RootContext.InAction = $true
     $Script:RootContext.NestedActions = New-Object -TypeName 'System.Collections.ArrayList'
     try
     {
+        if ($ConfirmAction.IsPresent)
+        {
+            $yes = New-Object System.Management.Automation.Host.ChoiceDescription '&Yes'
+            $no = New-Object System.Management.Automation.Host.ChoiceDescription '&No'
+            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+            $choiceRTN = $host.UI.PromptForChoice('Confirm', "Are you sure you want to perform this action '$cmdDisplayName'", $options, 1)
+            if ( $choiceRTN -eq 1 ) 
+            {
+                $skipped = $true
+                Write-Info "Confirm: Skipping action '$cmdDisplayName'"                
+                return
+            }
+        }
+
+        if ($WhatIfAction.IsPresent)
+        {
+            $WhatIfPreference = $true
+        }
+
         if (!$WhatIfPreference)
         {
             if ((Test-Path variable:Script:PSakeSetupTask) -and $Script:PSakeSetupTask)
@@ -158,7 +182,7 @@ function Invoke-Perform
         }
 
         # check function without code
-        if (!$Code -and (Get-IsPSFunctionDefinitionEmpty $Command)) { return; }
+        if (!$Code -and (Get-IsPSFunctionDefinitionEmpty $Command)) { $skipped = $true; return; }
 
         $script:InvokedCommands += $Command
 
@@ -327,7 +351,14 @@ function Invoke-Perform
                                 }
                                 catch
                                 {
-                                    if ($invokeErrorAction -ne 'Ignore') { Throw }
+                                    if ($invokeErrorAction -eq 'Continue')
+                                    {
+                                        Write-Host $_.Exception.Message -ForegroundColor White -BackgroundColor Red
+                                    }
+                                    elseif ($invokeErrorAction -notin 'Ignore', 'SilentlyContinue')
+                                    {
+                                        Throw
+                                    }
                                 }
                             }
                         }
@@ -602,7 +633,13 @@ function Invoke-Perform
         {
             $indent += 1
         }
-        $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = $commandStopwatch.Elapsed; Indent = $indent; Exception = $ex; HasError = $hasError; ReturnValue = $codeReturn; Command = $Command; Comment = $Comment }
+        $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = $commandStopwatch.Elapsed; Indent = $indent; Exception = $ex; HasError = $hasError; ReturnValue = $codeReturn; Command = $Command; Comment = $Comment; Confirm = $ConfirmAction; WhatIf = $WhatIfPreference; Skipped = $Skipped }
+    
+        if ($WhatIfAction.IsPresent)
+        {
+            $WhatIfPreference = $prevWhatIfPreference
+        }
+
         Pop-Location
     }
 
@@ -611,7 +648,7 @@ function Invoke-Perform
         if ($PSCmdlet.ShouldProcess($NextAction, "Invoke"))
         {
             $action = "Action-$NextAction"
-            Invoke-PerformIfDefined -Command $action -ThrowError $ThrowError -Test:$Test.IsPresent -WhatIf:$WhatIfPreference
+            Invoke-PerformIfDefined -Command $action -ThrowError $ThrowError -Test:$Test.IsPresent -WhatIf:($WhatIfPreference -or $WhatIfAction.IsPresent)
         }
     }
 }

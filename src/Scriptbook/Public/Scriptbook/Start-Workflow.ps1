@@ -9,7 +9,7 @@ executed by the order of actions found in the script Workflow file or by the act
 To influence the execution of actions use the action 'If' property
 
 .PARAMETER Actions
-Contains the Action(s) to execute in sequential order. Overrides the order found in the script file and limits the actions to execute. Depended actions are always executed except when switch NoDepends is used.
+Contains the Action(s) to execute in sequential order. Overrides the order found in the script file and limits the actions to execute. Depended actions are always executed except when switch NoDepends is used. Use * to select all Actions in script. Use wildcard '*" to select actions by name with wildcard.
 
 .PARAMETER Parameters
 Parameters to pass to Workflow
@@ -162,9 +162,10 @@ function Start-Workflow
                 {
                     try
                     {
-                        if ($null -ne $WorkflowActions -and ($WorkflowActions.count -gt 0) )
+                        if ($null -ne $WorkflowActions -and ($WorkflowActions.count -gt 0) -and ($WorkflowActions[0] -ne '*'))
                         {
-                            foreach ($action in $WorkflowActions)
+                            $expandedActions = Expand-WorkflowActions $WorkflowActions
+                            foreach ($action in $expandedActions)
                             {
                                 if (!($action.StartsWith('!')))
                                 {
@@ -265,6 +266,7 @@ function Start-Workflow
 
             $script:InvokedCommandsResult | ForEach-Object { if ($_.Exception) { $_.Exception = $_.Exception.Message } }
             $script:InvokedCommandsResult | ForEach-Object { $_.Name = ''.PadLeft(($_.Indent) + 1, '-') + $_.Name }
+            $script:InvokedCommandsResult | ForEach-Object { if ($_.Skipped -or $_.WhatIf) { $_.Duration = 'Skipped' } }
 
             if ($Documentation.IsPresent)
             {
@@ -287,7 +289,7 @@ function Start-Workflow
 
                 $script:InvokedCommandsResult | ForEach-Object { 
                     $item = [PSCustomObject]$_
-                    Write-Info "Action `e[0;36m$($item.Name)`e[0m" -ForegroundColor Magenta
+                    Write-Info "Action $(Get-AnsiColoredString -String $item.Name -Color 36)" -ForegroundColor Magenta
                     Write-Info ''.PadRight(78, '-')
                     if (![string]::IsNullOrEmpty($item.Comment))
                     {
