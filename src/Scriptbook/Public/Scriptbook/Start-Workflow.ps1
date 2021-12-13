@@ -105,6 +105,20 @@ function Start-Workflow
         [switch]$Documentation
     )
 
+    if ($ConfirmPreference -eq 'low')
+    {
+        $yes = New-Object System.Management.Automation.Host.ChoiceDescription '&Yes'
+        $no = New-Object System.Management.Automation.Host.ChoiceDescription '&No'
+        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+        $choiceRTN = $host.UI.PromptForChoice('Confirm', "Are you sure you want to perform this workflow '$WorkflowName'", $options, 1)
+        if ( $choiceRTN -eq 1 ) 
+        {
+            Write-Info "Confirm: stopping workflow '$WorkflowName'"
+            return
+        }
+        $ConfirmPreference = 'High'
+    }    
+
     if ($WorkflowContainer.IsPresent -and !$env:InScriptbookContainer)
     {
         # TODO !!EH supply all the parameters of the script caller?
@@ -126,7 +140,7 @@ function Start-Workflow
     }
     $ctx = Get-RootContext
     $ctx.NoLogging = $NoLogging.IsPresent
-    $isWhatIf = -not $PSCmdlet.ShouldProcess($WorkflowName, "Workflow")
+    $isWhatIf = $WhatIfPreference
     if ($Plan.IsPresent -or $Documentation.IsPresent)
     {
         $WhatIfPreference = $true

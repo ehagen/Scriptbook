@@ -154,23 +154,26 @@ function Invoke-Perform
     $Script:RootContext.NestedActions = New-Object -TypeName 'System.Collections.ArrayList'
     try
     {
-        if ($ConfirmAction.IsPresent)
-        {
-            $yes = New-Object System.Management.Automation.Host.ChoiceDescription '&Yes'
-            $no = New-Object System.Management.Automation.Host.ChoiceDescription '&No'
-            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-            $choiceRTN = $host.UI.PromptForChoice('Confirm', "Are you sure you want to perform this action '$cmdDisplayName'", $options, 1)
-            if ( $choiceRTN -eq 1 ) 
-            {
-                $skipped = $true
-                Write-Info "Confirm: Skipping action '$cmdDisplayName'"                
-                return
-            }
-        }
-
         if ($WhatIfAction.IsPresent)
         {
             $WhatIfPreference = $true
+        }
+
+        if (!$WhatIfPreference)
+        {
+            if ($ConfirmAction.IsPresent)
+            {
+                $yes = New-Object System.Management.Automation.Host.ChoiceDescription '&Yes'
+                $no = New-Object System.Management.Automation.Host.ChoiceDescription '&No'
+                $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                $choiceRTN = $host.UI.PromptForChoice('Confirm', "Are you sure you want to perform this action '$cmdDisplayName'", $options, 1)
+                if ( $choiceRTN -eq 1 ) 
+                {
+                    $skipped = $true
+                    Write-Info "Confirm: Skipping action '$cmdDisplayName'"                
+                    return
+                }
+            }    
         }
 
         if (!$WhatIfPreference)
@@ -223,7 +226,7 @@ function Invoke-Perform
                                 $vars = $using:globalScriptVariables
                                 foreach ($v in $vars.GetEnumerator())
                                 {
-                                    Set-Variable $v.Key -Value $v.Value -WhatIf:$False
+                                    Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false
                                 }
                                 if ($using:mp)
                                 {
@@ -236,14 +239,14 @@ function Invoke-Perform
                                 $Parameters.ForParallel = $true
 
                                 # use local vars
-                                Set-Variable ForItem -Value $_ -WhatIf:$False -Option Constant
-                                Set-Variable ForParallel -Value $true -WhatIf:$False -Option Constant
-                                Set-Variable Tag -Value $Parameters.Tag -WhatIf:$False -Option Constant -ErrorAction Ignore
-                                Set-Variable Name -Value $Parameters.Name -WhatIf:$False
-                                Set-Variable ActionName -Value $Parameters.ActionName -WhatIf:$False -Option ReadOnly
+                                Set-Variable ForItem -Value $_ -WhatIf:$False -Confirm:$false -Option Constant
+                                Set-Variable ForParallel -Value $true -WhatIf:$False -Confirm:$false -Option Constant
+                                Set-Variable Tag -Value $Parameters.Tag -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                                Set-Variable Name -Value $Parameters.Name -WhatIf:$False -Confirm:$false
+                                Set-Variable ActionName -Value $Parameters.ActionName -WhatIf:$False -Confirm:$false -Option ReadOnly
                                 foreach ($v in $Parameters.Parameters.GetEnumerator())
                                 {
-                                    Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Option Constant -ErrorAction Ignore
+                                    Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
                                 }
 
                                 $code = [Scriptblock]::Create($using:codeAsString)
@@ -278,7 +281,7 @@ function Invoke-Perform
                                     $vars = $using:globalScriptVariables
                                     foreach ($v in $vars.GetEnumerator())
                                     {
-                                        Set-Variable $v.Key -Value $v.Value -WhatIf:$False
+                                        Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false
                                     }
                                     if ($using:mp)
                                     {
@@ -292,14 +295,14 @@ function Invoke-Perform
                                     $Parameters.AsJob = $true
 
                                     # use local vars
-                                    Set-Variable ForItem -Value $Parameters.ForItem -WhatIf:$False -Option Constant
-                                    Set-Variable AsJob -Value $true -WhatIf:$False -Option Constant -ErrorAction Ignore
-                                    Set-Variable Tag -Value $Parameters.Tag -WhatIf:$False -Option Constant -ErrorAction Ignore
-                                    Set-Variable Name -Value $Parameters.Name -WhatIf:$False -Option Constant -ErrorAction Ignore
-                                    Set-Variable ActionName -Value $Parameters.ActionName -WhatIf:$False -Option ReadOnly
+                                    Set-Variable ForItem -Value $Parameters.ForItem -WhatIf:$False -Confirm:$false -Option Constant
+                                    Set-Variable AsJob -Value $true -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                                    Set-Variable Tag -Value $Parameters.Tag -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                                    Set-Variable Name -Value $Parameters.Name -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                                    Set-Variable ActionName -Value $Parameters.ActionName -WhatIf:$False -Confirm:$false -Option ReadOnly
                                     foreach ($v in $Parameters.Parameters.GetEnumerator())
                                     {
-                                        Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Option Constant -ErrorAction Ignore
+                                        Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
                                     }
 
                                     $code = [Scriptblock]::Create($using:codeAsString)
@@ -329,20 +332,20 @@ function Invoke-Perform
                     else
                     {
                         $r = @()
-                        Set-Variable AsJob -Value $true -Scope Global -WhatIf:$False
-                        Set-Variable Tag -Value $ActionParameters.Tag -Scope Global -WhatIf:$False
-                        Set-Variable Name -Value $ActionParameters.Name -Scope Global -WhatIf:$False
-                        Set-Variable ActionName -Value $ActionParameters.ActionName -Scope Global -WhatIf:$False
-                        Set-Variable Parameters -Value $ActionParameters.Parameters -Scope Global -WhatIf:$False
+                        Set-Variable AsJob -Value $true -Scope Global -WhatIf:$False -Confirm:$false
+                        Set-Variable Tag -Value $ActionParameters.Tag -Scope Global -WhatIf:$False -Confirm:$false
+                        Set-Variable Name -Value $ActionParameters.Name -Scope Global -WhatIf:$False -Confirm:$false
+                        Set-Variable ActionName -Value $ActionParameters.ActionName -Scope Global -WhatIf:$False -Confirm:$false
+                        Set-Variable Parameters -Value $ActionParameters.Parameters -Scope Global -WhatIf:$False -Confirm:$false
                         foreach ($v in $ActionParameters.Parameters.GetEnumerator())
                         {
-                            Set-Variable $v.Key -Value $v.Value -Scope Global -WhatIf:$False
+                            Set-Variable $v.Key -Value $v.Value -Scope Global -WhatIf:$False -Confirm:$false
                         }
                         foreach ($forItem in $forResult)
                         {
                             $ActionParameters.ForItem = $forItem
                             $ActionParameters.ForParallel = $false
-                            Set-Variable ForItem -Value $forItem -Scope Global -WhatIf:$False
+                            Set-Variable ForItem -Value $forItem -Scope Global -WhatIf:$False -Confirm:$false
                             if ($PSCmdlet.ShouldProcess("$cmdDisplayName with item '$($forItem)'", "Invoke"))
                             {
                                 try 
@@ -374,19 +377,19 @@ function Invoke-Perform
                         $vars = $using:globalScriptVariables
                         foreach ($v in $vars.GetEnumerator())
                         {
-                            Set-Variable $v.Key -Value $v.Value -WhatIf:$False
+                            Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false
                         }
                         if ($using:mp)
                         {
                             Import-Module $using:mp -Args @{ Quiet = $true }
                         }
                         $parameters = $using:ActionParameters
-                        Set-Variable Tag -Value $parameters.Tag -WhatIf:$False -Option Constant -ErrorAction Ignore
-                        Set-Variable Name -Value $parameters.Name -WhatIf:$False -Option Constant -ErrorAction Ignore
-                        Set-Variable ActionName -Value $parameters.ActionName -WhatIf:$False -Option ReadOnly
+                        Set-Variable Tag -Value $parameters.Tag -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                        Set-Variable Name -Value $parameters.Name -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                        Set-Variable ActionName -Value $parameters.ActionName -WhatIf:$False -Confirm:$false -Option ReadOnly
                         foreach ($v in $parameters.Parameters.GetEnumerator())
                         {
-                            Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Option Constant -ErrorAction Ignore
+                            Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
                         }
 
                         $code = [Scriptblock]::Create($using:codeAsString)
@@ -440,7 +443,7 @@ function Invoke-Perform
                             $vars = $using:globalScriptVariables
                             foreach ($v in $vars.GetEnumerator())
                             {
-                                Set-Variable $v.Key -Value $v.Value
+                                Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false
                             }
 
                             #TODO !!EH Do we need Scriptbook Module in remote, so yes install module remote (copy to remote first)
@@ -450,12 +453,12 @@ function Invoke-Perform
                             # }
 
                             $parameters = $using:ActionParameters
-                            Set-Variable Tag -Value $parameters.Tag -WhatIf:$False -Option Constant -ErrorAction Ignore
-                            Set-Variable Name -Value $parameters.Name -WhatIf:$False -Option Constant -ErrorAction Ignore
-                            Set-Variable ActionName -Value $parameters.ActionName -WhatIf:$False -Option ReadOnly
+                            Set-Variable Tag -Value $parameters.Tag -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                            Set-Variable Name -Value $parameters.Name -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                            Set-Variable ActionName -Value $parameters.ActionName -WhatIf:$False -Confirm:$false -Option ReadOnly
                             foreach ($v in $parameters.Parameters.GetEnumerator())
                             {
-                                Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Option Constant -ErrorAction Ignore
+                                Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
                             }
                             $code = [Scriptblock]::Create($using:codeAsString)
                             try 
@@ -498,11 +501,11 @@ function Invoke-Perform
                 }
                 else
                 {
-                    Set-Variable AsJob -Value $true -Scope Global -WhatIf:$False
-                    Set-Variable Tag -Value $ActionParameters.Tag -Scope Global -WhatIf:$False
-                    Set-Variable Name -Value $ActionParameters.Name -Scope Global -WhatIf:$False
-                    Set-Variable ActionName -Value $ActionParameters.ActionName -Scope Global -WhatIf:$False
-                    Set-Variable Parameters -Value $ActionParameters.Parameters -Scope Global -WhatIf:$False
+                    Set-Variable AsJob -Value $true -Scope Global -WhatIf:$False -Confirm:$false
+                    Set-Variable Tag -Value $ActionParameters.Tag -Scope Global -WhatIf:$False -Confirm:$false
+                    Set-Variable Name -Value $ActionParameters.Name -Scope Global -WhatIf:$False -Confirm:$false
+                    Set-Variable ActionName -Value $ActionParameters.ActionName -Scope Global -WhatIf:$False -Confirm:$false
+                    Set-Variable Parameters -Value $ActionParameters.Parameters -Scope Global -WhatIf:$False -Confirm:$false
                     if ($PSCmdlet.ShouldProcess($cmdDisplayName, "Invoke"))
                     {
                         try

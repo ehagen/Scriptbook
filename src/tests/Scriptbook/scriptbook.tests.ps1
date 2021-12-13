@@ -129,6 +129,26 @@ Describe 'with Functions Tests' {
             $script:cnt | Should -Be 2
         }
 
+        It 'CanRun Simple with WhatIf' {
+            # arrange
+            $script:cnt = 0;
+
+            # act
+            Action Hello {
+                Write-Info "Hello"
+                $script:cnt++
+            }
+
+            Action GoodBy -Confirm {
+                "GoodBy" | Out-ScriptbookHost
+                $script:cnt++
+            }
+
+            Start-Workflow * -Name 'CanRun Simple WhatIf' -WhatIf
+
+            # assert
+            $script:cnt | Should -Be 0
+        }        
     }
 
     Context 'Simple Workflows' {
