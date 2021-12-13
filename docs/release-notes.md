@@ -10,10 +10,12 @@
 ### Added
 
 - Added -Confirm support to Start-Workflow
+- Added Workflow Variables
 
 ### Changed
 
 - Fixed -WhatIf precedence over -Confirm like PowerShell does in 'SupportsShouldProcess'
+- Fixed workflow Transcript with -WhatIf
 
 ```
 

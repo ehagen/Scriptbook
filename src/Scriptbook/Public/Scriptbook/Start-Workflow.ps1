@@ -159,7 +159,7 @@ function Start-Workflow
     $currentLocation = Get-Location
     try
     {
-        if ($WorkflowTranscript.IsPresent)
+        if ($WorkflowTranscript.IsPresent -and !$isWhatIf)
         {
             Start-Transcript -Path "$scriptName.log" -Append -Force -IncludeInvocationHeader
         }
@@ -341,7 +341,7 @@ function Start-Workflow
             }
         }
 
-        if ($WorkflowTranscript.IsPresent)
+        if ($WorkflowTranscript.IsPresent -and !$isWhatIf)
         {
             Stop-Transcript
         }

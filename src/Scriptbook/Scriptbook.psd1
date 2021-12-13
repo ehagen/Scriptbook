@@ -13,7 +13,7 @@
         'Get-DecryptedSecret', 'Get-EncryptedSecret', 'Get-LocalCredential', 'Assert-Condition', 'Assert-Version',
         'Get-BoundParametersWithDefaultValue', 'Set-EnvironmentVar', 'Get-EnvironmentVar', 'Test-PSProperty', 'Get-PSPropertyValue', 'Start-ShellCmd', 'Write-Info',
         'FormatTaskName', 'Include', 'Invoke-Psake', 'Invoke-Task', 'Properties', 'Start-PSakeWorkflow', 'Task', 'TaskSetup', 'TaskTearDown',
-        'Add-WorkflowNotification', 'Out-ScriptbookHost'
+        'Add-WorkflowNotification', 'Out-ScriptbookHost', 'Variables'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()

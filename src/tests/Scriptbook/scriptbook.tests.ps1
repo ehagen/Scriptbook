@@ -498,7 +498,45 @@ Describe 'with Functions Tests' {
             # assert
             $script:cnt | Should -Be 3
         }
-    
+
+        It 'Workflow with Workflow Variables' {
+            # arrange
+            $script:cnt = 0;
+
+            # act
+            Variables -Name Samples {
+                @{
+                    OneVar = 'one'
+                    TwoVar = 'two'
+                }
+            }
+            Action Hello {
+                Write-Info "Hello"
+                if ($Samples.OneVar -eq 'one')
+                {
+                    $script:cnt++
+                    $Samples.OneVar = '1'
+                }
+            }
+
+            Action GoodBy {
+                Write-Info "GoodBy"
+                if ($Samples.OneVar -eq '1')
+                {
+                    $script:cnt++
+                }
+                if ($Samples.TwoVar -eq 'two')
+                {
+                    $script:cnt++
+                }
+            }
+
+            Start-Workflow -Name 'Workflow with Workflow Variables'
+
+            # assert
+            $script:cnt | Should -Be 3
+        }
+        
     }
 
 }
