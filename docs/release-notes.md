@@ -11,6 +11,7 @@
 
 - Added -Confirm support to Start-Workflow
 - Added Workflow Variables
+- Added start Workflow Context... Naming: WorkflowContext or Initialize-Context
 
 ### Changed
 

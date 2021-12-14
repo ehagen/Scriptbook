@@ -504,7 +504,7 @@ Describe 'with Functions Tests' {
             $script:cnt = 0;
 
             # act
-            Variables -Name Samples {
+            Variables -Name Samples -Global {
                 @{
                     OneVar = 'one'
                     TwoVar = 'two'
@@ -532,6 +532,45 @@ Describe 'with Functions Tests' {
             }
 
             Start-Workflow -Name 'Workflow with Workflow Variables'
+
+            # assert
+            $script:cnt | Should -Be 3
+        }
+
+        It 'Workflow with Workflow Context' {
+            # arrange
+            $script:cnt = 0;
+
+            # act
+            Initialize-Context -Name 'DefaultContext' -Global {
+                @{
+                    ParamOne = 'one'
+                    ParamTwo = 'two'
+                }
+            }
+
+            Action Hello {
+                Write-Info "Hello"
+                if ($DefaultContext.ParamOne -eq 'one')
+                {
+                    $script:cnt++
+                    $DefaultContext.ParamOne = '1'
+                }
+            }
+
+            Action GoodBy {
+                Write-Info "GoodBy"
+                if ($DefaultContext.ParamOne -eq '1')
+                {
+                    $script:cnt++
+                }
+                if ($DefaultContext.ParamTwo -eq 'two')
+                {
+                    $script:cnt++
+                }
+            }
+
+            Start-Workflow -Name 'Workflow with Workflow Context'
 
             # assert
             $script:cnt | Should -Be 3
