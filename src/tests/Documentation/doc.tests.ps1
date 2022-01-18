@@ -1,4 +1,4 @@
-Describe 'with Functions Tests' {
+Describe 'Documentation of Workflows' {
     
     BeforeAll {
         Set-Location $PSScriptRoot
@@ -10,7 +10,7 @@ Describe 'with Functions Tests' {
     }
 
 
-    It 'CanRun With Info' {
+    It 'Should Run workflow With Info' {
 
         # arrange
         $script:cnt = 0;
@@ -86,7 +86,7 @@ Describe 'with Functions Tests' {
         $script:cnt | Should -Be 2
     }
 
-    It 'CanRun With Sections' -Skip {
+    It 'Should Run workflow With Sections' -Skip {
         # arrange
         $script:cnt = 0;
 

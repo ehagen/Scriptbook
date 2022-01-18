@@ -3,7 +3,7 @@
 Registers and validates a new Action for Workflow.
 
 .DESCRIPTION
-Registers and validates a new Action for Workflow. Action is recorded but not executed until the workflow starts.
+Registers and validates a new Action for Workflow. Action is scanned/recorded but not executed until the workflow starts.
 
 .PARAMETER Name
 .PARAMETER IsGroup
@@ -27,6 +27,8 @@ Registers and validates a new Action for Workflow. Action is recorded but not ex
 .PARAMETER Comment
 .PARAMETER SuppressOutput
 .PARAMETER Always
+.PARAMETER NoSequence
+.PARAMETER Multiple
 .PARAMETER Code
 
 .EXAMPLE
@@ -66,6 +68,7 @@ function Register-Action
         [switch]$NoSequence,
         [switch]$WhatIf,
         [switch]$Confirm,
+        [switch]$Multiple,
         [ScriptBlock] $Code
     )
 
@@ -112,8 +115,9 @@ function Register-Action
         SuppressOutput    = $SuppressOutput
         Always            = $Always
         NoSequence        = $NoSequence
-        WhatIf        = $WhatIf
-        Confirm        = $Confirm
+        WhatIf            = $WhatIf
+        Confirm           = $Confirm
+        Multiple          = $Multiple
     }
     if ($ctx.Actions.ContainsKey($lAction.Name))
     {

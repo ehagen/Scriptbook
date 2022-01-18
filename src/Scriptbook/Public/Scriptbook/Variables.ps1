@@ -6,13 +6,10 @@ Define Scriptbook Workflow variables
 Define Scriptbook Workflow variables in PowerShell HashTable format and creates named PowerShell variable with HasTable as contents.
 
 .PARAMETER Name
-Name of created PowerShell HashTable variable
+Name of created Variables PowerShell HashTable variable
 
-.PARAMETER Context
-Workflow Context to add/merge Variables
-
-.PARAMETER Append
-Allows only to append to created PowerShell HashTable variable. If exists error is generated otherwise contents is merged.
+.PARAMETER Override
+Allow the current Variables to be over-written
 
 .PARAMETER Code
 HashTable with variables
@@ -30,59 +27,63 @@ Variables -Name Samples {
 
 # Access variables in Scriptbook with
 
-Write-Host $Samples.Variable1
-Write-Host $Samples.Variable2
+Write-Host $Context.Samples.Variable1
+Write-Host $Context.Samples.Variable2
+
+or
+
+$ctx = Get-WorkflowContext
+Write-Host $ctx.Samples.Variable1
+Write-Host $ctx.Samples.Variable2
 
 # Access variables in Scriptbook Action with
 
-Write-Host $Samples.Variable1
+Write-Host $Context.Samples.Variable1
 # or
-Write-Host $Script:Samples.Variable2
+Write-Host $Global:Context.Samples.Variable2
 
 # Update variables in Scriptbook Action with
-$Script:Samples.Variable1 = 'newValue'
+$Global:Context.Samples.Variable1 = 'newValue'
 
 #>
 function Variables
 {
     [CmdletBinding()]
     param(
-        $Name,
-        $WorkflowContext,
-        [switch]$Append,
-        [switch]$Global,
+        [Parameter(Mandatory = $true, Position = 0)][string]$Name,
+        [switch]$Override,
         [Parameter(Position = 1)]
         [ScriptBlock]$Code
     )
+    if ($Name -eq 'Variables') { Throw "Invalid Variables name found, '$Name' not allowed" }
+
+    if ( !($Override.IsPresent) -and (Get-Variable -Name Context -ErrorAction Ignore -Scope Global) -and $Global:Context.ContainsKey($Name))
+    {
+        Throw "Duplicate Variables name found, use Override to replace current Variables '$Name'"
+    }
+
     if ($null -eq $Code)
     {
         Throw "No variables script block is provided with HashTable. (Have you put the open curly brace on the next line?)"
     }
     try
     {   
-        $scope = if ($Global.IsPresent) { 'Global' } else { 'Script' }
         $value = (Invoke-Command $Code)
         if (!($value -is [HashTable])) { throw 'No HashTable found in Variables' }
 
-        if ($WorkflowContext)
+        # create context
+        if (!(Get-Variable -Name Context -ErrorAction Ignore -Scope Global))
         {
-            throw 'Not implemented'
+            Set-Variable -Name Context -Value @{ } -Scope Global
         }
-        else
-        {
-            if ((Get-Variable -Name $Name -ErrorAction Ignore -Scope $scope) -and $Append.IsPresent)
-            {
-                Write-Warning "Variable '$Name' already defined, cannot be appended"
-            }
-            else
-            {
-                Set-Variable -Name $Name -Value $value -Scope $scope
-            }
-        }
+
+        $Global:Context."$Name" = $value
+        Set-Variable -Name $Name -Value $value -Scope Global
     }
     catch
     {
         Write-Warning "Error setting '$Name' variable to '$Code' $($_.Exception.Message)"
         Write-Warning "Only HashTable @{ Name = 'default'; Name2 = 'default2'} is allowed"
+        Throw
     }
 }

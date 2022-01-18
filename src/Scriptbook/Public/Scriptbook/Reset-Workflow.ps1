@@ -18,6 +18,7 @@ function Reset-Workflow
 
     if ($PSCmdlet.ShouldProcess("Reset-Workflow"))
     {
+        Remove-Variable -Force -ErrorAction Ignore -Scope Global -Name Context
         $Script:RootContext = New-RootContext -WhatIf:$false -Soft:$Soft.IsPresent
 
         # compatibility with PSake

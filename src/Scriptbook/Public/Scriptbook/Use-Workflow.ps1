@@ -3,7 +3,7 @@
 Use workflow inline
 
 .DESCRIPTION
-Use workflow inline and aliases Flow and Pipeline
+Use workflow inline or alternative use alias Flow or Pipeline
 
 .REMARK
 See parameters of Start-Workflow

@@ -8,7 +8,7 @@ function New-RootContext
     if ($PSCmdlet.ShouldProcess("New-RootContext"))
     {
         $actions = New-Object -TypeName 'System.Collections.Generic.Dictionary[String,object]' -ArgumentList @([System.StringComparer]::InvariantCultureIgnoreCase)
-        $actionSequence  = New-Object -TypeName 'System.Collections.ArrayList'
+        $actionSequence = New-Object -TypeName 'System.Collections.ArrayList'
         $infos = New-Object -TypeName 'System.Collections.ArrayList'
         $notifications = New-Object -TypeName 'System.Collections.ArrayList'
         if ($Soft.IsPresent)
@@ -33,6 +33,7 @@ function New-RootContext
             UniqueIdCounter = 1
             Infos           = $infos
             Notifications   = $notifications
+            InTest          = $false
         }    
     }
 }

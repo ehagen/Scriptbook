@@ -1,4 +1,4 @@
-Describe 'with Functions Tests' {
+Describe 'Psake Workflow compatibility' {
     
     BeforeAll {
         Set-Location $PSScriptRoot
@@ -9,8 +9,9 @@ Describe 'with Functions Tests' {
         Reset-Workflow
     }
 
-    Context 'Tasks' {
-        It 'CanRun Simple' {
+    Context 'Run PSake Tasks' {
+
+        It 'Should Run Simple PSake workflow' {
             
             # arrange
             $script:cnt = 0;
@@ -43,7 +44,7 @@ Describe 'with Functions Tests' {
             $script:cnt | Should -Be 2
         }
 
-        It 'CanRun With FromModule PowershellBuild' -Skip {
+        It 'Should Run PSake task(s) with import Tasks -FromModule PowershellBuild' -Skip {
             # arrange
             $script:cnt = 0;
 

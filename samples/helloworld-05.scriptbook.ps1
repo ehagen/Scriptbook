@@ -15,7 +15,7 @@ function Invoke-Hello
 
 function Invoke-GoodBy
 {
-    [DependsOn(("Hello"))]param()
+    [DependsOn("Hello")]param()
     Write-Info "GoodBy"
 }
 

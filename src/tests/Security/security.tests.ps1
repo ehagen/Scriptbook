@@ -1,4 +1,4 @@
-Describe 'With Utilities Tests' {
+Describe 'Security Functions' {
     
     BeforeAll {
         Set-Location $PSScriptRoot
@@ -9,7 +9,7 @@ Describe 'With Utilities Tests' {
         Reset-Workflow
     }
 
-    It 'Encrypt and Decrypt Secret' {
+    It 'Should Encrypt and Decrypt a Secret' {
         $seed = 'aLong1%Seed'
         $secretValue = 'aSecret'
 

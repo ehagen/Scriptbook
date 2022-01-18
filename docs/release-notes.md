@@ -10,13 +10,21 @@
 ### Added
 
 - Added -Confirm support to Start-Workflow
-- Added Workflow Variables
-- Added start Workflow Context... Naming: WorkflowContext or Initialize-Context
+- Added Scriptbook Workflow Variables
+- Added Scriptbook Workflow Parameters
+- Added Scriptbook Workflow Context
+- Added Scriptbook Tests action
+- Added Scriptbook Setup and Teardown actions
+- Added indent-level to action output
+- Added $_ variable support in Action For loop, alternative for $ForItem
 
 ### Changed
 
 - Fixed -WhatIf precedence over -Confirm like PowerShell does in 'SupportsShouldProcess'
 - Fixed workflow Transcript with -WhatIf
+- Fixed loading Cache file DateTime on all PowerShell versions and Platforms
+- Cleanup CallStack, removed ScriptBook/framework lines
+- Refactored Pester tests
 
 ```
 

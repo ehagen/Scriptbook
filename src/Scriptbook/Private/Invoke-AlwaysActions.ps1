@@ -1,4 +1,4 @@
-function Invoke-ActionAlways
+function Invoke-AlwaysActions
 {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
     [CmdletBinding(SupportsShouldProcess = $true)]
