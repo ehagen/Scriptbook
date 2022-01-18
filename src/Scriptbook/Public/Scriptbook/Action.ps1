@@ -75,6 +75,9 @@ Determines if Action is Always executed regardless of any error in other actions
 .PARAMETER NoSequence
 Determines if Action is executed when sequential/linear Workflow is executed
 
+.PARAMETER Multiple
+Determines if Action can be called multiple times, default Action can only be called once
+
 .PARAMETER Code
 Contains the action code/scriptblock to execute when action is enabled (default) 
 
@@ -84,12 +87,16 @@ Contains the action code/scriptblock to execute when action is enabled (default)
 
 #>
 Set-Alias -Name Test -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
+Set-Alias -Name Tests -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
 Set-Alias -Name Step -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
 Set-Alias -Name Activity -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
 Set-Alias -Name Job -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
 Set-Alias -Name Chore -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
 Set-Alias -Name Stage -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
 Set-Alias -Name Override -Value Action -WhatIf:$false -Confirm:$False
+Set-Alias -Name Setup -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
+Set-Alias -Name Teardown -Value Action -Scope Global -Force -WhatIf:$false -Confirm:$False
+
 function Action
 {
     param(
@@ -120,6 +127,7 @@ function Action
         [switch]$NoSequence,
         [switch]$WhatIf,
         [switch]$Confirm,
+        [switch]$Multiple,
         [Parameter(Position = 1)]
         [ScriptBlock] $Code
     )
@@ -151,7 +159,48 @@ function Action
                 }
             }
         }
-        Register-Action -Name $Name -Tag $Tag -Depends $Depends -Parameters $Parameters -ErrorAction $ErrorActionPreference -AsJob:$AsJob.IsPresent -If $If -Description $Description -Code $Code -Disabled $Disabled.IsPresent -TypeName $PSCmdlet.MyInvocation.InvocationName -NextAction $NextAction -For $For -Parallel:$Parallel.IsPresent -Container:$Container.IsPresent -ContainerOptions $ContainerOptions -Session $Session -Isolated:$Isolated.IsPresent -Unique:$Unique.IsPresent -RequiredVariables $RequiredVariables -Comment $Comment -SuppressOutput:$SuppressOutput.IsPresent -Always:$Always.IsPresent -NoSequence:$NoSequence.IsPresent -WhatIf:$WhatIf.IsPresent -Confirm:$Confirm.IsPresent
+        $typeName = $PSCmdlet.MyInvocation.InvocationName
+        $uniqueOption = $Unique.IsPresent
+        $alwaysOption = $Always.IsPresent
+        $errorOption       = $ErrorActionPreference
+        if ($typeName -eq 'Teardown')
+        {
+            $alwaysOption = $true
+        }
+        elseif ($typeName -eq 'Tests')
+        {
+            $errorOption = 'Continue'
+        }
+        $options = @{
+            Name              = $Name
+            Tag               = $Tag
+            Depends           = $Depends
+            Parameters        = $Parameters
+            ErrorAction       = $errorOption
+            AsJob             = $AsJob.IsPresent
+            If                = $If
+            Description       = $Description
+            Code              = $Code
+            Disabled          = $Disabled.IsPresent
+            TypeName          = $typeName
+            NextAction        = $NextAction
+            For               = $For
+            Parallel          = $Parallel.IsPresent
+            Container         = $Container.IsPresent
+            ContainerOptions  = $ContainerOptions
+            Session           = $Session
+            Isolated          = $Isolated.IsPresent
+            Unique            = $uniqueOption
+            RequiredVariables = $RequiredVariables
+            Comment           = $Comment
+            SuppressOutput    = $SuppressOutput.IsPresent
+            Always            = $alwaysOption
+            NoSequence        = $NoSequence.IsPresent
+            WhatIf            = $WhatIf.IsPresent
+            Confirm           = $Confirm.IsPresent
+            Multiple          = $Multiple.IsPresent            
+        }
+        Register-Action @options
     }
 
     # Start build-in Action: Start Workflow

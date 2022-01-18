@@ -113,7 +113,7 @@ function Get-GlobalVarsForScriptblock
     return $result
 }
 
-function Write-ExceptionMessage([alias('e')]$ErrorRecord, [alias('f')][switch]$Full = $false, [alias('tlc')]$TraceLineCnt = 0)
+function Write-ExceptionMessage([alias('e')]$ErrorRecord, [alias('f')][switch]$Full = $false, [alias('tlc')]$TraceLineCnt = 0, [switch]$ScriptBlocksOnly)
 {
     if (($VerbosePreference -eq 'Continue') -or $Full.IsPresent)
     {
@@ -131,7 +131,17 @@ function Write-ExceptionMessage([alias('e')]$ErrorRecord, [alias('f')][switch]$F
             Write-Info 'CallStack:'.PadRight(78, ' ') -ForegroundColor Black -BackgroundColor Yellow
             foreach ($line in $ErrorRecord.ScriptStackTrace.Split("`n"))
             {
-                Write-Info $line -ForegroundColor Yellow
+                if ($ScriptBlocksOnly.IsPresent)
+                {
+                    if ($line.StartsWith('at <ScriptBlock>')) # hardcoded
+                    {
+                        Write-Info $line -ForegroundColor Yellow
+                    }
+                }
+                else
+                {
+                    Write-Info $line -ForegroundColor Yellow
+                }
                 $cnt++
                 if ($cnt -ge $TraceLineCnt) { break; }
             }            

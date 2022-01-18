@@ -1,4 +1,4 @@
-Describe 'with Functions Tests' {
+Describe 'Functions support Workflows' {
     
     BeforeAll {
         Set-Location $PSScriptRoot
@@ -9,33 +9,37 @@ Describe 'with Functions Tests' {
         Reset-Workflow
     }
 
-    It 'Use Depends On Attribute' -Skip {
+    <#
+    Remark: For testing this in Pester we need to make our functions global with Global: prefix.
+            For use in scriptbook this is not necessary.
+    #>
+    It 'Should Use [DependsOn] Attribute' {
 
         # arrange
         $script:cnt = 0;
 
         # act
-        function Invoke-Hello
+        function Global:Invoke-Hello
         {
             Write-Info "Hello"
             $script:cnt++
         }
 
-        function Invoke-GoodBy
+        function Global:Invoke-GoodBy
         {
-            [DependsOn(("Hello"))]param()
+            [DependsOn("Hello")]param()
             Write-Info "GoodBy"
             $script:cnt++
         }
 
-        function Invoke-GoodBy2
+        function Global:Invoke-GoodBy2
         {
-            [DependsOn(("Hello"))]param()
+            [DependsOn("Hello")]param()
             Write-Info "GoodBy"
             $script:cnt++
         }
 
-        function Invoke-GoodBy3
+        function Global:Invoke-GoodBy3
         {
             [DependsOn(("Hello", 'GoodBy2'))]param()
             Write-Info "GoodBy"

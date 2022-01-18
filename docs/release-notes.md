@@ -4,6 +4,30 @@
 ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/Scriptbook.svg?label=PSGallery%20Downloads&logo=PowerShell&style=flat-square)
 [![Build Status](https://dev.azure.com/tedon/TD.Deploy/_apis/build/status/ehagen.Scriptbook?branchName=master)](https://dev.azure.com/tedon/TD.Deploy/_build/latest?definitionId=52&branchName=master)
 
+## [0.5.5]
+
+```plain
+### Added
+
+- Added -Confirm support to Start-Workflow
+- Added Scriptbook Workflow Variables
+- Added Scriptbook Workflow Parameters
+- Added Scriptbook Workflow Context
+- Added Scriptbook Tests action
+- Added Scriptbook Setup and Teardown actions
+- Added indent-level to action output
+- Added $_ variable support in Action For loop, alternative for $ForItem
+
+### Changed
+
+- Fixed -WhatIf precedence over -Confirm like PowerShell does in 'SupportsShouldProcess'
+- Fixed workflow Transcript with -WhatIf
+- Fixed loading Cache file DateTime on all PowerShell versions and Platforms
+- Cleanup CallStack, removed ScriptBook/framework lines
+- Refactored Pester tests
+
+```
+
 ## [0.5.4]
 
 ```plain

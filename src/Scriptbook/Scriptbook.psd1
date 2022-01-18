@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Scriptbook.psm1'
-    ModuleVersion     = '0.5.4'
+    ModuleVersion     = '0.5.5'
     GUID              = '05a95b01-2890-480f-a4ac-f40bc52d6c82'
     Author            = 'Edwin Hagen'
     CompanyName       = 'Tedon Technology BV'
@@ -13,12 +13,12 @@
         'Get-DecryptedSecret', 'Get-EncryptedSecret', 'Get-LocalCredential', 'Assert-Condition', 'Assert-Version',
         'Get-BoundParametersWithDefaultValue', 'Set-EnvironmentVar', 'Get-EnvironmentVar', 'Test-PSProperty', 'Get-PSPropertyValue', 'Start-ShellCmd', 'Write-Info',
         'FormatTaskName', 'Include', 'Invoke-Psake', 'Invoke-Task', 'Properties', 'Start-PSakeWorkflow', 'Task', 'TaskSetup', 'TaskTearDown',
-        'Add-WorkflowNotification', 'Out-ScriptbookHost'
+        'Add-WorkflowNotification', 'Out-ScriptbookHost', 'Variables', 'Parameters', 'Import-Parameters', 'Save-ParameterValues', 'Read-ParameterValues', 'Read-ParameterValuesFromHost'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
     AliasesToExport   = @(
-        'Start-Flow', 'Start-Saga', 'Start-Pipeline', 'Saga', 'Flow', 'Pipeline', 'Step', 'Job', 'Test', 'Activity', 'Chore', 'Stage', 'Override', 'Info',
+        'Start-Flow', 'Start-Saga', 'Start-Pipeline', 'Saga', 'Flow', 'Pipeline', 'Step', 'Job', 'Test', 'Tests', 'Activity', 'Chore', 'Stage', 'Override', 'Info', 'Setup', 'Teardown'
         'Documentation', 'Initialize-Action', 'Complete-Action', 'Import-Step', 'Import-Test', 'Invoke-Step', 'Execute', 'Exec', 'Assert', 'Get-ActionOutput', 'Get-ActionOutputValue',
         'Out-Info'
     )

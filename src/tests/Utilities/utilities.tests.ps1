@@ -1,4 +1,4 @@
-Describe 'With Utilities Tests' {
+Describe 'Utilities Functions' {
     
     BeforeAll {
         Set-Location $PSScriptRoot
@@ -9,20 +9,20 @@ Describe 'With Utilities Tests' {
         Reset-Workflow
     }
 
-    It 'Start-ShellCmd' {
+    It 'Should Start ShellCmd' {
         $r = Start-ShellCmd -Command 'pwsh' -Arguments '-NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -Command Get-Process'
         if ($r.ExitCode -ne 0) { throw "Invalid ExitCode returned from pwsh.exe : $($r.ExitCode)" }
         if ([string]::IsNullOrEmpty($r.StdOut)) { throw "No output found in shell command" }
         if (![string]::IsNullOrEmpty($r.StdErr)) { throw "Errors found in output shell command" }
     }
 
-    It 'Set/Get-EnvironmentVariable' {
+    It 'Should Set/Get EnvironmentVariable' {
         Set-EnvironmentVar -n testVar -v testValue
         $r = Get-EnvironmentVar 'testVar'
         Assert-Condition ($r -eq 'testValue') -Message 'Set-Env value'
     }
 
-    It 'Assert-Operation' {
+    It 'Should Assert Operation' {
         $cnt = 5
         Assert-Condition -v $cnt -e 5 -m 'Error checking cnt condition'
 
@@ -44,7 +44,7 @@ Describe 'With Utilities Tests' {
         Assert-Condition -v $d -o -eq -e 5.01 -m 'Error checking double condition'
     }
 
-    It 'Get-PSPropertyAndGet-HasPSProperty' {
+    It 'Should Get PSProperty and check for PSProperty' {
 
         $obj = [PSCustomObject]@{
             Prop1 = 'test'

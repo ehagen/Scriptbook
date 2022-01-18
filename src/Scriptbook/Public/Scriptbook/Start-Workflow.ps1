@@ -105,6 +105,20 @@ function Start-Workflow
         [switch]$Documentation
     )
 
+    if ($ConfirmPreference -eq 'low')
+    {
+        $yes = New-Object System.Management.Automation.Host.ChoiceDescription '&Yes'
+        $no = New-Object System.Management.Automation.Host.ChoiceDescription '&No'
+        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+        $choiceRTN = $host.UI.PromptForChoice('Confirm', "Are you sure you want to perform this workflow '$WorkflowName'", $options, 1)
+        if ( $choiceRTN -eq 1 ) 
+        {
+            Write-Info "Confirm: stopping workflow '$WorkflowName'"
+            return
+        }
+        $ConfirmPreference = 'High'
+    }    
+
     if ($WorkflowContainer.IsPresent -and !$env:InScriptbookContainer)
     {
         # TODO !!EH supply all the parameters of the script caller?
@@ -126,7 +140,8 @@ function Start-Workflow
     }
     $ctx = Get-RootContext
     $ctx.NoLogging = $NoLogging.IsPresent
-    $isWhatIf = -not $PSCmdlet.ShouldProcess($WorkflowName, "Workflow")
+    $ctx.InTest = $TestWorkflow.IsPresent
+    $isWhatIf = $WhatIfPreference
     if ($Plan.IsPresent -or $Documentation.IsPresent)
     {
         $WhatIfPreference = $true
@@ -145,7 +160,7 @@ function Start-Workflow
     $currentLocation = Get-Location
     try
     {
-        if ($WorkflowTranscript.IsPresent)
+        if ($WorkflowTranscript.IsPresent -and !$isWhatIf)
         {
             Start-Transcript -Path "$scriptName.log" -Append -Force -IncludeInvocationHeader
         }
@@ -162,6 +177,7 @@ function Start-Workflow
                 {
                     try
                     {
+                        Invoke-SetupActions -Actions $ctx.ActionSequence -ThrowError $true -Test:$TestWorkflow.IsPresent -WhatIf:$isWhatIf -Parallel:$WorkflowParallel.IsPresent
                         if ($null -ne $WorkflowActions -and ($WorkflowActions.count -gt 0) -and ($WorkflowActions[0] -ne '*'))
                         {
                             $expandedActions = Expand-WorkflowActions $WorkflowActions
@@ -180,7 +196,7 @@ function Start-Workflow
                     }
                     finally
                     {
-                        Invoke-ActionAlways -Actions $ctx.ActionSequence -ThrowError $true -Test:$TestWorkflow.IsPresent -WhatIf:$isWhatIf -Parallel:$WorkflowParallel.IsPresent
+                        Invoke-AlwaysActions -Actions $ctx.ActionSequence -ThrowError $true -Test:$TestWorkflow.IsPresent -WhatIf:$isWhatIf -Parallel:$WorkflowParallel.IsPresent
                     }
                 }
             }
@@ -193,12 +209,12 @@ function Start-Workflow
         {
             if ($workflowErrorAction -eq 'Continue')
             {
-                Write-ExceptionMessage $_ -TraceLineCnt 15
+                Write-ExceptionMessage $_ -TraceLineCnt 2 -ScriptBlocksOnly
             }
             elseif ($workflowErrorAction -notin 'Ignore', 'SilentlyContinue')
             {
                 $hasErrors = $true
-                Write-ExceptionMessage $_ -TraceLineCnt 15
+                Write-ExceptionMessage $_ -TraceLineCnt 15 -ScriptBlocksOnly 
                 Global:Write-OnLogException -Exception $_.Exception
                 Global:Invoke-AfterWorkflow -Commands $WorkflowActions -ErrorRecord $_ | Out-Null    
                 Throw
@@ -214,7 +230,9 @@ function Start-Workflow
     {
         Set-Location $currentLocation
         $workflowStopwatch.Stop()
-        
+
+        $ctx = Get-RootContext
+
         if (!$NoReport.IsPresent)
         {            
             #TODO !!EH: Fix issue ansi escape sequences and Format-Table (invalid sizing)
@@ -264,7 +282,7 @@ function Start-Workflow
 
             Write-Info ''.PadRight(78, '-')
 
-            $script:InvokedCommandsResult | ForEach-Object { if ($_.Exception) { $_.Exception = $_.Exception.Message } }
+            $script:InvokedCommandsResult | ForEach-Object { if ($_.Exception) { $_.Exception = "$(Get-AnsiColoredString -String $_.Exception.Message -Color 101)" } }
             $script:InvokedCommandsResult | ForEach-Object { $_.Name = ''.PadLeft(($_.Indent) + 1, '-') + $_.Name }
             $script:InvokedCommandsResult | ForEach-Object { if ($_.Skipped -or $_.WhatIf) { $_.Duration = 'Skipped' } }
 
@@ -316,9 +334,38 @@ function Start-Workflow
                 $script:InvokedCommandsResult | ForEach-Object { [PSCustomObject]$_ } | Format-Table -AutoSize Name, Duration, Exception, @{Label = 'Output' ; Expression = { $_.ReturnValue } } | Out-String | Write-Info
             }
             Write-Info ''.PadRight(78, '-')
+
+            if ($TestWorkflow.IsPresent)
+            {
+                $tests = 0
+                $testsWithError = 0
+                $script:InvokedCommandsResult | ForEach-Object {                    
+                    if ($_.ContainsKey('TypeName') -and $_.TypeName -eq 'Test') 
+                    {
+                        $tests++
+                        if ($_.Exception) 
+                        {
+                            $testsWithError++ 
+                        } 
+                    }
+                }
+                $testsSkipped = 0
+                $ctx.Actions.Values.GetEnumerator() | ForEach-Object {
+                    if ($_.TypeName -eq 'Test' -and $_.Disabled) 
+                    {
+                        $testsSkipped++ 
+                    } 
+                }
+                $testsPassed = $tests-$testsSkipped-$testsWithError
+                Write-Host "$(Get-AnsiColoredString -Color 32 -String "Tests Passed: $testsPassed" -NotSupported:($testsWithError -gt 0)), $(Get-AnsiColoredString -Color 101 -String "Failed: $testsWithError" -NotSupported:($testsWithError -eq 0)), $(Get-AnsiColoredString -Color 93 -String "Skipped: $testsSkipped" -NotSupported:($testsSkipped -eq 0))"
+                if ($tests -gt 0)
+                {
+                    Write-Host "$(Get-AnsiColoredString -Color 32 -String "Tests % Passed $( [int](100 - ($testsWithError / ($tests-$testsSkipped) ) * 100))%" -NotSupported:($testsWithError -gt 0)) of tests ($($tests-$testsSkipped))"
+                }
+                Write-Info ''.PadRight(78, '-')
+            }
         }
 
-        $ctx = Get-RootContext
         if ($ctx.Notifications.Count -gt 0)
         {
             foreach ($notification in $ctx.Notifications)
@@ -327,7 +374,7 @@ function Start-Workflow
             }
         }
 
-        if ($WorkflowTranscript.IsPresent)
+        if ($WorkflowTranscript.IsPresent -and !$isWhatIf)
         {
             Stop-Transcript
         }
@@ -336,7 +383,10 @@ function Start-Workflow
         {
             $Script:PreviousRunContext = $Script:RootContext.PSObject.Copy()
         }
-        Reset-Workflow -WhatIf:$false
+        if (!($TestWorkflow.IsPresent))
+        {
+            Reset-Workflow -WhatIf:$false
+        }
     }
 
 }

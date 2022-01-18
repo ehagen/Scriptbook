@@ -27,7 +27,8 @@ function Invoke-Perform
         $Comment,
         [switch]$SuppressOutput,
         [switch]$ConfirmAction,
-        [switch]$WhatIfAction
+        [switch]$WhatIfAction,
+        [switch]$Multiple
     )
 
     $invokeErrorAction = $ErrorActionPreference
@@ -115,6 +116,7 @@ function Invoke-Perform
         $varsNotFound = $null
     }
 
+    $indentSpaces = ''.PadRight(($Script:RootContext.IndentLevel + 2) , ' ')
     # check start condition
     if ($If)
     {
@@ -122,15 +124,28 @@ function Invoke-Perform
         if (!$ifResult)
         {
             $skipped = $true
-            Write-ScriptLog @{action = "$($TypeName): $cmdDisplayName"; time = $(Get-Date -Format s); } -AsAction
+            Write-ScriptLog @{action = "$($indentSpaces)$($TypeName): $cmdDisplayName"; time = $(Get-Date -Format s); } -AsAction
             Write-Info 'Skipped:'
-            $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = 0; Indent = $Script:RootContext.IndentLevel; Exception = $null; HasError = $false; ReturnValue = $null; Command = $Command; Comment = $Comment; Confirm = $ConfirmAction; WhatIf = $WhatIfPreference; Skipped = $Skipped }
+            $script:InvokedCommandsResult += @{ 
+                Name        = "$cmdDisplayName"
+                Duration    = 0
+                Indent      = $Script:RootContext.IndentLevel
+                Exception   = $null
+                HasError    = $false
+                ReturnValue = $null
+                Command     = $Command
+                TypeName    = $TypeName
+                Comment     = $Comment
+                Confirm     = $ConfirmAction
+                WhatIf      = $WhatIfPreference
+                Skipped     = $Skipped 
+            }
             return;
         }
     }
 
     $commandStopwatch = [System.Diagnostics.Stopwatch]::StartNew();
-    Write-ScriptLog @{action = "$($TypeName): $(Get-AnsiColoredString -String $cmdDisplayName -Color 36 )"; time = $(Get-Date -Format s); } -AsAction
+    Write-ScriptLog @{action = "$($indentSpaces)$($TypeName): $(Get-AnsiColoredString -String $cmdDisplayName -Color 36 )"; time = $(Get-Date -Format s); } -AsAction
 
     Write-ScriptLog @{action = "$cmdDisplayName-Started"; time = $(Get-Date -Format s); } -AsAction -Verbose
 
@@ -154,23 +169,26 @@ function Invoke-Perform
     $Script:RootContext.NestedActions = New-Object -TypeName 'System.Collections.ArrayList'
     try
     {
-        if ($ConfirmAction.IsPresent)
-        {
-            $yes = New-Object System.Management.Automation.Host.ChoiceDescription '&Yes'
-            $no = New-Object System.Management.Automation.Host.ChoiceDescription '&No'
-            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-            $choiceRTN = $host.UI.PromptForChoice('Confirm', "Are you sure you want to perform this action '$cmdDisplayName'", $options, 1)
-            if ( $choiceRTN -eq 1 ) 
-            {
-                $skipped = $true
-                Write-Info "Confirm: Skipping action '$cmdDisplayName'"                
-                return
-            }
-        }
-
         if ($WhatIfAction.IsPresent)
         {
             $WhatIfPreference = $true
+        }
+
+        if (!$WhatIfPreference)
+        {
+            if ($ConfirmAction.IsPresent)
+            {
+                $yes = New-Object System.Management.Automation.Host.ChoiceDescription '&Yes'
+                $no = New-Object System.Management.Automation.Host.ChoiceDescription '&No'
+                $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                $choiceRTN = $host.UI.PromptForChoice('Confirm', "Are you sure you want to perform this action '$cmdDisplayName'", $options, 1)
+                if ( $choiceRTN -eq 1 ) 
+                {
+                    $skipped = $true
+                    Write-Info "Confirm: Skipping action '$cmdDisplayName'"                
+                    return
+                }
+            }    
         }
 
         if (!$WhatIfPreference)
@@ -184,7 +202,10 @@ function Invoke-Perform
         # check function without code
         if (!$Code -and (Get-IsPSFunctionDefinitionEmpty $Command)) { $skipped = $true; return; }
 
-        $script:InvokedCommands += $Command
+        if (!($Multiple.IsPresent))
+        {
+            $script:InvokedCommands += $Command
+        }
 
         if (!$WhatIfPreference)
         {
@@ -223,7 +244,7 @@ function Invoke-Perform
                                 $vars = $using:globalScriptVariables
                                 foreach ($v in $vars.GetEnumerator())
                                 {
-                                    Set-Variable $v.Key -Value $v.Value -WhatIf:$False
+                                    Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false
                                 }
                                 if ($using:mp)
                                 {
@@ -236,14 +257,14 @@ function Invoke-Perform
                                 $Parameters.ForParallel = $true
 
                                 # use local vars
-                                Set-Variable ForItem -Value $_ -WhatIf:$False -Option Constant
-                                Set-Variable ForParallel -Value $true -WhatIf:$False -Option Constant
-                                Set-Variable Tag -Value $Parameters.Tag -WhatIf:$False -Option Constant -ErrorAction Ignore
-                                Set-Variable Name -Value $Parameters.Name -WhatIf:$False
-                                Set-Variable ActionName -Value $Parameters.ActionName -WhatIf:$False -Option ReadOnly
+                                Set-Variable ForItem -Value $_ -WhatIf:$False -Confirm:$false -Option Constant
+                                Set-Variable ForParallel -Value $true -WhatIf:$False -Confirm:$false -Option Constant
+                                Set-Variable Tag -Value $Parameters.Tag -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                                Set-Variable Name -Value $Parameters.Name -WhatIf:$False -Confirm:$false
+                                Set-Variable ActionName -Value $Parameters.ActionName -WhatIf:$False -Confirm:$false -Option ReadOnly
                                 foreach ($v in $Parameters.Parameters.GetEnumerator())
                                 {
-                                    Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Option Constant -ErrorAction Ignore
+                                    Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
                                 }
 
                                 $code = [Scriptblock]::Create($using:codeAsString)
@@ -253,9 +274,11 @@ function Invoke-Perform
                                 }
                                 catch
                                 {                                 
+                                    $hasError = $true
                                     if ($using:invokeErrorAction -eq 'Continue')
                                     {
                                         Write-Host $_.Exception.Message -ForegroundColor White -BackgroundColor Red
+                                        $ex = $_.Exception
                                     }
                                     elseif ($using:invokeErrorAction -notin 'Ignore', 'SilentlyContinue')
                                     {
@@ -278,7 +301,7 @@ function Invoke-Perform
                                     $vars = $using:globalScriptVariables
                                     foreach ($v in $vars.GetEnumerator())
                                     {
-                                        Set-Variable $v.Key -Value $v.Value -WhatIf:$False
+                                        Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false
                                     }
                                     if ($using:mp)
                                     {
@@ -292,14 +315,15 @@ function Invoke-Perform
                                     $Parameters.AsJob = $true
 
                                     # use local vars
-                                    Set-Variable ForItem -Value $Parameters.ForItem -WhatIf:$False -Option Constant
-                                    Set-Variable AsJob -Value $true -WhatIf:$False -Option Constant -ErrorAction Ignore
-                                    Set-Variable Tag -Value $Parameters.Tag -WhatIf:$False -Option Constant -ErrorAction Ignore
-                                    Set-Variable Name -Value $Parameters.Name -WhatIf:$False -Option Constant -ErrorAction Ignore
-                                    Set-Variable ActionName -Value $Parameters.ActionName -WhatIf:$False -Option ReadOnly
+                                    Set-Variable ForItem -Value $Parameters.ForItem -WhatIf:$False -Confirm:$false -Option Constant
+                                    Set-Variable _ -Value $Parameters.ForItem -WhatIf:$False -Confirm:$false
+                                    Set-Variable AsJob -Value $true -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                                    Set-Variable Tag -Value $Parameters.Tag -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                                    Set-Variable Name -Value $Parameters.Name -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                                    Set-Variable ActionName -Value $Parameters.ActionName -WhatIf:$False -Confirm:$false -Option ReadOnly
                                     foreach ($v in $Parameters.Parameters.GetEnumerator())
                                     {
-                                        Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Option Constant -ErrorAction Ignore
+                                        Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
                                     }
 
                                     $code = [Scriptblock]::Create($using:codeAsString)
@@ -309,9 +333,11 @@ function Invoke-Perform
                                     }
                                     catch
                                     {
+                                        $hasError = $true
                                         if ($using:invokeErrorAction -eq 'Continue')
                                         {
                                             Write-Host $_.Exception.Message -ForegroundColor White -BackgroundColor Red
+                                            $ex = $_.Exception
                                         }
                                         elseif ($using:invokeErrorAction -notin 'Ignore', 'SilentlyContinue')
                                         {
@@ -329,20 +355,21 @@ function Invoke-Perform
                     else
                     {
                         $r = @()
-                        Set-Variable AsJob -Value $true -Scope Global -WhatIf:$False
-                        Set-Variable Tag -Value $ActionParameters.Tag -Scope Global -WhatIf:$False
-                        Set-Variable Name -Value $ActionParameters.Name -Scope Global -WhatIf:$False
-                        Set-Variable ActionName -Value $ActionParameters.ActionName -Scope Global -WhatIf:$False
-                        Set-Variable Parameters -Value $ActionParameters.Parameters -Scope Global -WhatIf:$False
+                        Set-Variable AsJob -Value $true -Scope Global -WhatIf:$False -Confirm:$false
+                        Set-Variable Tag -Value $ActionParameters.Tag -Scope Global -WhatIf:$False -Confirm:$false
+                        Set-Variable Name -Value $ActionParameters.Name -Scope Global -WhatIf:$False -Confirm:$false
+                        Set-Variable ActionName -Value $ActionParameters.ActionName -Scope Global -WhatIf:$False -Confirm:$false
+                        Set-Variable Parameters -Value $ActionParameters.Parameters -Scope Global -WhatIf:$False -Confirm:$false
                         foreach ($v in $ActionParameters.Parameters.GetEnumerator())
                         {
-                            Set-Variable $v.Key -Value $v.Value -Scope Global -WhatIf:$False
+                            Set-Variable $v.Key -Value $v.Value -Scope Global -WhatIf:$False -Confirm:$false
                         }
                         foreach ($forItem in $forResult)
                         {
                             $ActionParameters.ForItem = $forItem
                             $ActionParameters.ForParallel = $false
-                            Set-Variable ForItem -Value $forItem -Scope Global -WhatIf:$False
+                            Set-Variable ForItem -Value $forItem -Scope Global -WhatIf:$False -Confirm:$false
+                            Set-Variable _ -Value $forItem -Scope Global -WhatIf:$False -Confirm:$false
                             if ($PSCmdlet.ShouldProcess("$cmdDisplayName with item '$($forItem)'", "Invoke"))
                             {
                                 try 
@@ -351,9 +378,11 @@ function Invoke-Perform
                                 }
                                 catch
                                 {
+                                    $hasError = $true
                                     if ($invokeErrorAction -eq 'Continue')
                                     {
                                         Write-Host $_.Exception.Message -ForegroundColor White -BackgroundColor Red
+                                        $ex = $_.Exception
                                     }
                                     elseif ($invokeErrorAction -notin 'Ignore', 'SilentlyContinue')
                                     {
@@ -374,19 +403,19 @@ function Invoke-Perform
                         $vars = $using:globalScriptVariables
                         foreach ($v in $vars.GetEnumerator())
                         {
-                            Set-Variable $v.Key -Value $v.Value -WhatIf:$False
+                            Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false
                         }
                         if ($using:mp)
                         {
                             Import-Module $using:mp -Args @{ Quiet = $true }
                         }
                         $parameters = $using:ActionParameters
-                        Set-Variable Tag -Value $parameters.Tag -WhatIf:$False -Option Constant -ErrorAction Ignore
-                        Set-Variable Name -Value $parameters.Name -WhatIf:$False -Option Constant -ErrorAction Ignore
-                        Set-Variable ActionName -Value $parameters.ActionName -WhatIf:$False -Option ReadOnly
+                        Set-Variable Tag -Value $parameters.Tag -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                        Set-Variable Name -Value $parameters.Name -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                        Set-Variable ActionName -Value $parameters.ActionName -WhatIf:$False -Confirm:$false -Option ReadOnly
                         foreach ($v in $parameters.Parameters.GetEnumerator())
                         {
-                            Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Option Constant -ErrorAction Ignore
+                            Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
                         }
 
                         $code = [Scriptblock]::Create($using:codeAsString)
@@ -396,9 +425,11 @@ function Invoke-Perform
                         }
                         catch
                         {
+                            $hasError = $true
                             if ($using:invokeErrorAction -eq 'Continue')
                             {
                                 Write-Host $_.Exception.Message -ForegroundColor White -BackgroundColor Red
+                                $ex = $_.Exception
                             }
                             elseif ($using:invokeErrorAction -notin 'Ignore', 'SilentlyContinue')
                             {
@@ -440,7 +471,7 @@ function Invoke-Perform
                             $vars = $using:globalScriptVariables
                             foreach ($v in $vars.GetEnumerator())
                             {
-                                Set-Variable $v.Key -Value $v.Value
+                                Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false
                             }
 
                             #TODO !!EH Do we need Scriptbook Module in remote, so yes install module remote (copy to remote first)
@@ -450,12 +481,12 @@ function Invoke-Perform
                             # }
 
                             $parameters = $using:ActionParameters
-                            Set-Variable Tag -Value $parameters.Tag -WhatIf:$False -Option Constant -ErrorAction Ignore
-                            Set-Variable Name -Value $parameters.Name -WhatIf:$False -Option Constant -ErrorAction Ignore
-                            Set-Variable ActionName -Value $parameters.ActionName -WhatIf:$False -Option ReadOnly
+                            Set-Variable Tag -Value $parameters.Tag -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                            Set-Variable Name -Value $parameters.Name -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
+                            Set-Variable ActionName -Value $parameters.ActionName -WhatIf:$False -Confirm:$false -Option ReadOnly
                             foreach ($v in $parameters.Parameters.GetEnumerator())
                             {
-                                Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Option Constant -ErrorAction Ignore
+                                Set-Variable $v.Key -Value $v.Value -WhatIf:$False -Confirm:$false -Option Constant -ErrorAction Ignore
                             }
                             $code = [Scriptblock]::Create($using:codeAsString)
                             try 
@@ -464,9 +495,11 @@ function Invoke-Perform
                             }
                             catch
                             {
+                                $hasError = $true
                                 if ($using:invokeErrorAction -eq 'Continue')
                                 {
                                     Write-Host $_.Exception.Message -ForegroundColor White -BackgroundColor Red
+                                    $ex = $_.Exception
                                 }
                                 elseif ($using:invokeErrorAction -notin 'Ignore', 'SilentlyContinue')
                                 {
@@ -488,6 +521,7 @@ function Invoke-Perform
                             if ($invokeErrorAction -eq 'Continue')
                             {
                                 Write-ScriptLog $_.Exception.Message -AsError
+                                $ex = $_.Exception
                             }
                             elseif ($invokeErrorAction -notin 'Ignore', 'SilentlyContinue')
                             {
@@ -498,11 +532,11 @@ function Invoke-Perform
                 }
                 else
                 {
-                    Set-Variable AsJob -Value $true -Scope Global -WhatIf:$False
-                    Set-Variable Tag -Value $ActionParameters.Tag -Scope Global -WhatIf:$False
-                    Set-Variable Name -Value $ActionParameters.Name -Scope Global -WhatIf:$False
-                    Set-Variable ActionName -Value $ActionParameters.ActionName -Scope Global -WhatIf:$False
-                    Set-Variable Parameters -Value $ActionParameters.Parameters -Scope Global -WhatIf:$False
+                    Set-Variable AsJob -Value $true -Scope Global -WhatIf:$False -Confirm:$false
+                    Set-Variable Tag -Value $ActionParameters.Tag -Scope Global -WhatIf:$False -Confirm:$false
+                    Set-Variable Name -Value $ActionParameters.Name -Scope Global -WhatIf:$False -Confirm:$false
+                    Set-Variable ActionName -Value $ActionParameters.ActionName -Scope Global -WhatIf:$False -Confirm:$false
+                    Set-Variable Parameters -Value $ActionParameters.Parameters -Scope Global -WhatIf:$False -Confirm:$false
                     if ($PSCmdlet.ShouldProcess($cmdDisplayName, "Invoke"))
                     {
                         try
@@ -515,6 +549,7 @@ function Invoke-Perform
                             if ($invokeErrorAction -eq 'Continue')
                             {
                                 Write-ScriptLog $_.Exception.Message -AsError
+                                $ex = $_.Exception
                             }
                             elseif ($invokeErrorAction -notin 'Ignore', 'SilentlyContinue')
                             {
@@ -538,6 +573,7 @@ function Invoke-Perform
                         if ($invokeErrorAction -eq 'Continue')
                         {
                             Write-ScriptLog $_.Exception.Message -AsError
+                            $ex = $_.Exception
                         }
                         elseif ($invokeErrorAction -notin 'Ignore', 'SilentlyContinue')
                         {
@@ -609,7 +645,7 @@ function Invoke-Perform
         if ($invokeErrorAction -eq 'Continue')
         {
             $ex = $_.Exception
-            Write-ExceptionMessage $_ -TraceLineCnt 5
+            Write-ExceptionMessage $_ -TraceLineCnt 5 -ScriptBlocksOnly
             Global:Invoke-AfterPerform -Command $Command -ErrorRecord $_
             Global:Write-OnLogException -Exception $ex
         }
@@ -633,7 +669,20 @@ function Invoke-Perform
         {
             $indent += 1
         }
-        $script:InvokedCommandsResult += @{ Name = "$cmdDisplayName"; Duration = $commandStopwatch.Elapsed; Indent = $indent; Exception = $ex; HasError = $hasError; ReturnValue = $codeReturn; Command = $Command; Comment = $Comment; Confirm = $ConfirmAction; WhatIf = $WhatIfPreference; Skipped = $Skipped }
+        $script:InvokedCommandsResult += @{ 
+            Name        = "$cmdDisplayName"
+            Duration    = $commandStopwatch.Elapsed
+            Indent      = $indent
+            Exception   = $ex
+            HasError    = $hasError
+            ReturnValue = $codeReturn
+            Command     = $Command
+            TypeName    = $TypeName
+            Comment     = $Comment
+            Confirm     = $ConfirmAction
+            WhatIf      = $WhatIfPreference
+            Skipped     = $Skipped
+        }
     
         if ($WhatIfAction.IsPresent)
         {

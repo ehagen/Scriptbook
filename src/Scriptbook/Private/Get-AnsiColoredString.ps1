@@ -1,6 +1,8 @@
-function Get-AnsiColoredString([string]$String, [int]$Color)
+function Get-AnsiColoredString([string]$String, [ValidateNotNull()][int]$Color, [switch]$NotSupported)
 {
-    if ($Global:ScriptbookSimpleHost)
+    # ref: https://en.wikipedia.org/wiki/ANSI_escape_code for color codes 
+    # ref: https://duffney.io/usingansiescapesequencespowershell/
+    if ($Global:ScriptbookSimpleHost -or $NotSupported.IsPresent)
     {
         return $String
     }
