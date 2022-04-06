@@ -47,6 +47,7 @@ Set-Alias -Name Import-Step -Value Import-Action -Scope Global -Force -WhatIf:$f
 #Set-Alias -Name Import-Flow -Value Import-Action -Scope Global -Force -WhatIf:$false
 function Import-Action
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     [CmdletBinding()]
     param (
         [ValidateNotNullOrEmpty()]

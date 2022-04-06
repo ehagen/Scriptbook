@@ -37,6 +37,7 @@ Register-Action
 #>
 function Register-Action
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSupportsShouldProcess", "")]
     [OutputType([System.Void])]
     param(
         [Parameter(Mandatory = $true, Position = 0)][string][ValidateNotNullOrEmpty()]$Name,

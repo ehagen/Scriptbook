@@ -17,6 +17,7 @@ Use exact match in property name checking
 #>
 function Test-PSProperty
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
     [OutputType([boolean])]
     param([alias('o')][object]$Object, [alias('p')][string]$Name, [alias('e')][switch]$Exact)
 

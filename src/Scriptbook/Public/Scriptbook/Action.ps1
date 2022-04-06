@@ -99,6 +99,7 @@ Set-Alias -Name Teardown -Value Action -Scope Global -Force -WhatIf:$false -Conf
 
 function Action
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSupportsShouldProcess", "")]
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
         [String[]] $Tag = @(),

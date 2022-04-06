@@ -20,7 +20,7 @@ function Get-LocalCredential([Parameter(Mandatory = $true)][string]$Name)
     else
     {
         # not fail safe but better than nothing
-        if ( ((Get-Host).Name -eq 'ConsoleHost') -and ([bool]([Environment]::GetCommandLineArgs() -like '-noni*')) )
+        if (Get-IsPowerShellStartedInNonInteractiveMode)
         {
             Throw "Get-LocalCredential not working when running script in -NonInteractive Mode, unable to prompt for Credentials"
         }

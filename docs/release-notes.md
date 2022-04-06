@@ -4,6 +4,26 @@
 ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/Scriptbook.svg?label=PSGallery%20Downloads&logo=PowerShell&style=flat-square)
 [![Build Status](https://dev.azure.com/tedon/TD.Deploy/_apis/build/status/ehagen.Scriptbook?branchName=master)](https://dev.azure.com/tedon/TD.Deploy/_build/latest?definitionId=52&branchName=master)
 
+## [0.6.0]
+
+```plain
+### Added
+
+- Added Set-WorkflowInConfigureMode
+- Added $ConfigurePreference & Edit Scriptbook parameters in Console Host (use -Configure parameter on Start-Scriptbook)
+- Added AsJob support to Start-Scriptbook
+- Added secure storage of secrets in json files to read/save parameters (from TD.Util)
+- Added not (!) support to Action expansion
+- Added warning loading Scriptbook module twice
+- Added Get-IsPowerShellStartedInNonInteractiveMode (Check running in console mode)
+- Added verbose support to Start-Workflow
+- Added verbose support to Out-Null (visible when in verbose mode)
+
+### Changed
+- Updated to Pester 5.* with code-coverage
+
+```
+
 ## [0.5.5]
 
 ```plain

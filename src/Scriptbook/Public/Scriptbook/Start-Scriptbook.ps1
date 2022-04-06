@@ -20,6 +20,12 @@ Determines if workflow is run in container
 .PARAMETER ContainerOptions
 Determines the container options when running in a container. ContainerOptions.Image contains the container image used.
 
+.PARAMETER Configure
+Determines if workflow starts in configure mode --> Workflow configuration parameters are fetched from Console. Workflow is not executed.
+
+.PARAMETER AsJob
+Run Scriptbook in Powershell Job (Separate process)
+
 .EXAMPLE
 
 Start-Scriptbook ./hallo-01.scriptbook.ps1
@@ -27,21 +33,66 @@ Start-Scriptbook ./hallo-01.scriptbook.ps1
 #>
 function Global:Start-Scriptbook
 {
+    [CmdletBinding(SupportsShouldProcess = $True)]
     param(
         $File,
         $Actions,
         $Parameters,
         [switch]$Container,
-        [HashTable]$ContainerOptions = @{}
+        [HashTable]$ContainerOptions = @{},
+        [switch]$Configure,
+        [switch]$AsJob
     )
 
-    if ($Container.IsPresent -or ($ContainerOptions.Count -gt 0) -and !$env:InScriptbookContainer)
+    if ($PSCmdlet.ShouldProcess($File))
     {
-        Start-ScriptInContainer -File $Script:MyInvocation.ScriptName -Options $ContainerOptions -Parameters $Parameters
-        return
+        # Let WhatsIf be handled downstream
     }
-    else
+
+    Set-WorkflowInConfigureMode $Configure.IsPresent
+    try
     {
-        . $File -Actions $Actions -Parameters $Parameters
+        if ($Configure.IsPresent)
+        {
+            $AsJob = $false
+        }
+
+        if ($Container.IsPresent -or ($ContainerOptions.Count -gt 0) -and !$env:InScriptbookContainer)
+        {
+            Start-ScriptInContainer -File $Script:MyInvocation.ScriptName -Options $ContainerOptions -Parameters $Parameters -WhatIf:$WhatIfPreference
+            return
+        }
+        else
+        {
+            $extraParams = @{}
+            if ($Actions)
+            {
+                [void]$extraParams.Add('Actions', $Actions)
+            }
+            if ($Parameters)
+            {
+                [void]$extraParams.Add('Parameters', $Parameters)
+            }
+            if ($WhatIfPreference)
+            {
+                [void]$extraParams.Add('WhatIf', $true)
+            }
+            if ($AsJob.IsPresent)
+            {
+                Start-Job {
+                    $file = $args[0]
+                    $extraParams = $args[1]
+                    . $file @extraParams
+                } -ArgumentList $File, $extraParams | Wait-Job | Receive-Job
+            }
+            else
+            {
+                . $File @extraParams
+            }
+        }
     }
-} 
+    finally
+    {
+        Set-WorkflowInConfigureMode $false
+    }
+}

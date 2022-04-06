@@ -402,24 +402,27 @@ Describe 'Simple Workflows' {
         # assert
         $script:cnt | Should -Be 3
     }
-     
-    It 'Should run simple workflow with allow Action execution multiple times' {
+
+    It 'Should run simple workflow with allow Action execution multiple times and show verbose output' {
         # arrange
         $script:cnt = 0;
 
         # act
         Action Hello -Multiple {
             Write-Info "Hello"
+            'Hello from Verbose' | Out-Null
             $script:cnt++
         }
 
         Action Hello2 {
             Write-Info "Hello2"
+            'Hello2 from Verbose' | Out-Null
             $script:cnt++
         }
 
         Action Hello3 {
             Write-Info "Hello3"
+            'Hello3 from Verbose' | Out-Null
             Invoke-Action Hello
             Invoke-Action Hello
             $script:cnt++
@@ -427,15 +430,13 @@ Describe 'Simple Workflows' {
 
         Action GoodBy {
             Write-Info "GoodBy"
+            'Goodby from Verbose' | Out-Null
             $script:cnt++
         }
 
-        Start-Workflow -Name 'Workflow with Multiple times call action'
+        Start-Workflow -Name 'Workflow with Multiple times call action' -Verbose
 
         # assert
         $script:cnt | Should -Be 6
     }
-
-
-
 }

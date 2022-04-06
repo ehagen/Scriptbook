@@ -3,9 +3,9 @@ Output
 docs/Functions
 Tests/tmp
 coverage.xml
-Coverage-Pester.xml
-Test-Pester.XML
-Test-Pester.xml
+coverage.xml
+testResults.xml
+testResults.xml
 site/
 .DS_Store
 tmp
