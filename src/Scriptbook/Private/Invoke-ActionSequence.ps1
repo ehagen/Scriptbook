@@ -31,10 +31,18 @@ function Invoke-ActionSequence
         $hasDepends = $true
         if (!$HasDepends)
         {
-            $mp = (Get-Module Scriptbook).Path
+            $module = Get-Module Scriptbook
+            if ($module)
+            {
+                $mp = $module.Path
+            }
+            else
+            {
+                throw "Module scriptbook loaded more than one time. Only Import Scriptbook Module once."
+            }
             $globalScriptVariables = Get-GlobalVarsForScriptblock -AsHashTable
             $rc = Get-RootContext
-            $Actions | Where-Object { $_.NoSequence -eq $false} | ForEach-Object -Parallel {
+            $Actions | Where-Object { $_.NoSequence -eq $false } | ForEach-Object -Parallel {
                 $vars = $using:globalScriptVariables
                 foreach ($v in $vars.GetEnumerator())
                 {

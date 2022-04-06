@@ -48,6 +48,7 @@ $Global:Context.Samples.Variable1 = 'newValue'
 #>
 function Variables
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "")]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, Position = 0)][string]$Name,
@@ -55,6 +56,8 @@ function Variables
         [Parameter(Position = 1)]
         [ScriptBlock]$Code
     )
+    if ($WhatIfPreference) { Write-Host "What if: Performing the operation 'Variables' on target '$Name'" }
+
     if ($Name -eq 'Variables') { Throw "Invalid Variables name found, '$Name' not allowed" }
 
     if ( !($Override.IsPresent) -and (Get-Variable -Name Context -ErrorAction Ignore -Scope Global) -and $Global:Context.ContainsKey($Name))
@@ -74,11 +77,11 @@ function Variables
         # create context
         if (!(Get-Variable -Name Context -ErrorAction Ignore -Scope Global))
         {
-            Set-Variable -Name Context -Value @{ } -Scope Global
+            Set-Variable -Name Context -Value @{ } -Scope Global -WhatIf:$false
         }
 
         $Global:Context."$Name" = $value
-        Set-Variable -Name $Name -Value $value -Scope Global
+        Set-Variable -Name $Name -Value $value -Scope Global -WhatIf:$false
     }
     catch
     {

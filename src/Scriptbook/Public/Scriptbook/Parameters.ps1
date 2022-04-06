@@ -60,7 +60,8 @@ $Global:DefaultParameters.Variable1 = 'newValue'
 #>
 function Parameters
 {
-    [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "")]
+    [CmdletBinding(SupportsShouldProcess = $True)]
     param(
         [Parameter(Mandatory = $true, Position = 0)][string]$Name,
         $Path,
@@ -68,6 +69,8 @@ function Parameters
         [Parameter(Position = 1)]
         [ScriptBlock]$Code
     )
+    if ($WhatIfPreference) { Write-Host "What if: Performing the operation 'Parameters' on target '$Name'" }
+
     if ($Name -eq 'Parameters') { Throw "Invalid Parameters name found, '$Name' not allowed" }
 
     if (!($Override.IsPresent) -and (Get-Variable -Name Context -ErrorAction Ignore -Scope Global) -and $Global:Context.ContainsKey($Name))
@@ -81,22 +84,26 @@ function Parameters
     }
     try
     {
+        $value = $null
         if ($Path -and (Test-Path $Path -ErrorAction Ignore))
         {
-            # TODO load from json secure...
-            $value = Get-Content -Path $Path | ConvertFrom-Json -AsHashtable
+            $value = Read-ParameterValuesInternal -Path $Path
         }
-        else
+
+        if ($null -eq $value)
         {
             $value = (Invoke-Command $Code)
-            if (!($value -is [HashTable])) { throw 'No HashTable found in Parameters' }    
+            if (-not (($value -is [HashTable]) -or ($value -is [System.Collections.Specialized.OrderedDictionary])))
+            {
+                throw 'No HashTable found in Parameters' 
+            }
         }
 
         # convert parameters HashTable to internal HashTable == context, we support different formats of parameters
         $internalValue = $value    
 
         # add Version variable if not found, init with 1.0.0
-        if (!($internalValue.ContainsKey('Version')))
+        if (!($internalValue.Contains('Version')))
         {
             $internalValue.Version = '1.0.0'
         }
@@ -104,14 +111,23 @@ function Parameters
         # create context
         if (!(Get-Variable -Name Context -ErrorAction Ignore -Scope Global))
         {
-            Set-Variable -Name Context -Value @{ } -Scope Global
+            Set-Variable -Name Context -Value @{ } -Scope Global -WhatIf:$false
         }
         $Global:Context."$Name" = $internalValue
-        Set-Variable -Name $Name -Value $internalValue -Scope Global
+        Set-Variable -Name $Name -Value $internalValue -Scope Global -WhatIf:$false
+
+        if ($Global:ConfigurePreference)
+        {
+            Read-ParameterValuesFromHost -Name $Name -Notice 'Configure Scriptbook Parameters'
+            if ($null -ne $Path)
+            {
+                Save-ParameterValues -Name $Name -Path $Path
+            }
+        }
     }
     catch
     {
         Write-Warning "Error setting '$Name' parameters to '$Code' $($_.Exception.Message)"
-        Write-Warning "Only HashTable @{ Name = 'default'; Name2 = 'default2'} is allowed"
+        Write-Warning "Only HashTable @{ Name = 'default'; Name2 = 'default2'} is allowed"        
     }
 }

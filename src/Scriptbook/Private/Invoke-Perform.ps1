@@ -4,7 +4,8 @@
 #>
 function Invoke-Perform
 {
-    [CmdletBinding(SupportsShouldProcess = $True)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
+        [CmdletBinding(SupportsShouldProcess = $True)]
     param (
         [string][alias('c')]$Command,
         $Code = $null,
@@ -225,7 +226,15 @@ function Invoke-Perform
                 $mp = $null
                 if (!$Isolated.IsPresent)
                 {
-                    $mp = (Get-Module Scriptbook).Path
+                    $module = Get-Module Scriptbook
+                    if ($module)
+                    {
+                        $mp = $module.Path
+                    }
+                    else
+                    {
+                        throw "Module scriptbook loaded more than once. Only Import Scriptbook Module one time."
+                    }
                 }
 
                 if ($For)

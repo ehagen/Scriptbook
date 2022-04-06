@@ -158,22 +158,26 @@ Describe 'Scriptbook workflows with Parameters' {
         $script:cnt | Should -Be 3
     }
 
-    It 'Should run scriptbook workflow with saving & reading workflow parameters' {
+    It 'Should run scriptbook workflow with saving & reading workflow parameters secure' {
         # arrange
         $script:cnt = 0;
 
         # act
         Parameters -Name 'Params' {
             @{
-                ParamOne = 'one'
-                ParamTwo = 'two'
+                ParamOne    = 'one'
+                ParamTwo    = 'two'
+                ParamSecret = (ConvertTo-SecureString -String ('zcd7d0fcc926f073dff81de2c??') -AsPlainText -Force)
+                ParamSecret2 = New-SecureStringStorage 'ppp7d0fcc926f073dff81de2c??'
             }
         }
 
         Action Hello {
             Write-Info "Hello"
             $Context.Params.ParamOne = '1.1'
+            $Context.Params.ParamSecret = (ConvertTo-SecureString -String ('ycd7d0fcc926f073dff81de2c??') -AsPlainText -Force)
             Save-ParameterValues -Name 'Params' -Path './my-parameter-values.json'
+            $Context.Params = @{}
             $script:cnt++
         }
 
@@ -185,6 +189,20 @@ Describe 'Scriptbook workflows with Parameters' {
             {
                 $script:cnt++
             }
+            if (Test-IsSecureStringStorageObject $Context.Params.ParamSecret)
+            {
+                if (($Context.Params.ParamSecret.GetPlainString()) -eq 'ycd7d0fcc926f073dff81de2c??')
+                {
+                    $script:cnt++
+                }
+            }
+            if (Test-IsSecureStringStorageObject $Context.Params.ParamSecret2)
+            {
+                if (($Context.Params.ParamSecret2.GetPlainString()) -eq 'ppp7d0fcc926f073dff81de2c??')
+                {
+                    $script:cnt++
+                }
+            }
         }
 
         try
@@ -193,11 +211,183 @@ Describe 'Scriptbook workflows with Parameters' {
         }
         finally
         {
+            $json = Get-Content -Path ./my-parameter-values.json -Raw
             Remove-Item -Path './my-parameter-values.json' -Force -ErrorAction Ignore
+
         }
 
         # assert
-        $script:cnt | Should -Be 2
+        $script:cnt | Should -Be 4
+
+        $json.Contains('ycd7d0fcc926f073dff81de2c??') | Should -Be $false
+        $json.Contains('ppp7d0fcc926f073dff81de2c??') | Should -Be $false
     }
 
+    It 'Should configure scriptbook workflow parameters' {
+
+        Mock Get-IsPowerShellStartedInNonInteractiveMode -ModuleName 'Scriptbook' {
+            return $false
+        }
+
+        Mock Read-Host -ModuleName 'Scriptbook' { 
+            if ($Prompt.Contains('ParamOne '))
+            {
+                return 'Hello'
+            }
+            else
+            {
+                return '' 
+            }
+        }
+    
+        # arrange
+        $script:cnt = 0;
+        Set-WorkflowInConfigureMode $true
+        #$Global:WhatIfPreference = $true
+        try
+        {
+            # act
+            Parameters -Name 'Params' {
+                @{
+                    ParamOne = 'one'
+                    ParamTwo = 'two'
+                }
+            }
+
+            Variables -Name 'Samples' {
+                @{
+                    ParamThree = 'three'
+                }
+            }
+
+            Action Hello {
+                Write-Info "Hello"
+                $ctx = Get-WorkflowContext
+                if ($ctx.Params.ParamOne -eq 'one')
+                {
+                    $script:cnt++
+                    $ctx.Params.ParamOne = '1'
+                }
+            }
+
+            Action GoodBy {
+                Write-Info "GoodBy"
+                $ctx = Get-WorkflowContext
+                if ($ctx.Params.ParamOne -eq '1')
+                {
+                    $script:cnt++
+                }
+                if ($ctx.Params.ParamTwo -eq 'two')
+                {
+                    $script:cnt++
+                }
+                if ($ctx.Samples.ParamThree -eq 'three')
+                {
+                    $script:cnt++
+                }
+            }
+
+            Start-Workflow -Name 'Workflow with Parameters'
+        }
+        finally
+        {
+            Set-WorkflowInConfigureMode $false
+        }
+
+        # assert
+        $script:cnt | Should -Be 0
+        $Context.Params.ParamOne | Should -Be 'Hello'
+    }
+
+
+    It 'Should edit scriptbook workflow parameters' {
+
+        Mock Read-Host -ModuleName 'Scriptbook' { 
+            if ($Prompt.Contains('ParamOne '))
+            {
+                return 'Hello'
+            }
+            else
+            {
+                return '' 
+            }
+        }
+    
+        # arrange
+        $script:cnt = 0;
+        try
+        {
+            # act
+            Parameters -Name 'Params' {
+                @{
+                    ParamOne = 'one'
+                    ParamTwo = 'two'
+                }
+            }
+
+            Edit-WorkflowParameters -Name 'Params' -Path $null -Notice 'Edit the Workflow parameters in this test'
+        }
+        finally
+        {
+                
+        }
+
+        # assert
+        $script:cnt | Should -Be 0
+        $Context.Params.ParamOne | Should -Be 'Hello'
+    }        
+
+    It 'Should run scriptbook with -WhatIf' {
+
+        # arrange
+        $script:cnt = 0;
+        # act
+        Parameters -Name 'Params' {
+            @{
+                ParamOne = 'one'
+                ParamTwo = 'two'
+            }
+        }
+
+        Variables -Name 'Samples' {
+            @{
+                ParamThree = 'three'
+            }
+        }
+
+        Action Hello {
+            Write-Info "Hello"
+            $ctx = Get-WorkflowContext
+            if ($ctx.Params.ParamOne -eq 'one')
+            {
+                $script:cnt++
+                $ctx.Params.ParamOne = '1'
+            }
+        }
+
+        Action GoodBy {
+            Write-Info "GoodBy"
+            $ctx = Get-WorkflowContext
+            if ($ctx.Params.ParamOne -eq '1')
+            {
+                $script:cnt++
+            }
+            if ($ctx.Params.ParamTwo -eq 'two')
+            {
+                $script:cnt++
+            }
+            if ($ctx.Samples.ParamThree -eq 'three')
+            {
+                $script:cnt++
+            }
+        }
+
+        # assert
+        $Context.Params.ParamOne | Should -Be 'one'
+
+        Start-Workflow -Name 'Workflow with Parameters' -WhatIf
+
+        # assert
+        $script:cnt | Should -Be 0
+    }        
 }

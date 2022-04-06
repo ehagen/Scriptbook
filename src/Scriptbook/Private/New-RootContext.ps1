@@ -23,17 +23,19 @@ function New-RootContext
         }
 
         New-Object PSObject -Property @{
-            Actions         = $actions
-            ActionSequence  = $actionSequence
-            IndentLevel     = -1
-            NoLogging       = $false
-            Id              = New-Guid
-            InAction        = $false
-            NestedActions   = New-Object -TypeName 'System.Collections.ArrayList'
-            UniqueIdCounter = 1
-            Infos           = $infos
-            Notifications   = $notifications
-            InTest          = $false
+            Actions             = $actions
+            ActionSequence      = $actionSequence
+            IndentLevel         = -1
+            NoLogging           = $false
+            Id                  = New-Guid
+            InAction            = $false
+            NestedActions       = New-Object -TypeName 'System.Collections.ArrayList'
+            UniqueIdCounter     = 1
+            Infos               = $infos
+            Notifications       = $notifications
+            InTest              = $false
+            ConfigurePreference = $false
+            Verbose             = $false
         }    
     }
 }

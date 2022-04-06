@@ -1,5 +1,8 @@
-function Expand-WorkflowActions($Actions)
+function Expand-WorkflowActions
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
+    param($Actions)
+
     $ctx = Get-RootContext
     $expandedActions = [System.Collections.ArrayList]@()
     foreach ($action in $Actions)
@@ -11,7 +14,7 @@ function Expand-WorkflowActions($Actions)
                 $n = $item.Value.DisplayName
                 if ($n -like $action)
                 {
-                    if (!$expandedActions.Contains($n))
+                    if (!$expandedActions.Contains($n) -and !$expandedActions.Contains("!$n"))
                     {
                         [void]$expandedActions.Add($n)
                     }

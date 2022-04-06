@@ -4,6 +4,8 @@ A Scriptbook Workflow contains Data & Actions. Data is represented by parameters
 
 By introducing Scriptbook Workflow Parameters & Variables functions you can organize your parameters and variables easier and have support for loading and saving parameter values to a file. The state of your Parameters and Variables are stored in the workflow context during the execution of your Scriptbook workflow.
 
+For sample Parameters definition and access to Parameters see snippet below. You can add more than one Parameters definition to workflow by Name.
+
 ```powershell
 Parameters -Name 'DefaultParameters' -Path './DefaultParameters.json' {
     @{
@@ -30,3 +32,5 @@ $ctx = Get-WorkflowContext
 $ctx.DefaultParameters.Store.Name
 
 ```
+
+When including the -Path option you can load the parameters from a json file and edit them outside your workflow. You can also edit the Parameters when running the Scriptbook in configure mode or setting the Set-WorkflowInConfigureMode to $true.  

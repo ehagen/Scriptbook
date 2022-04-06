@@ -5,7 +5,7 @@ jobs:
   - job: BuildModule
 
     pool:
-      vmImage: vs2017-win2016
+      vmImage: windows-latest
       #vmImage: 'ubuntu-latest'
 
     steps:
@@ -36,14 +36,14 @@ jobs:
         condition: always()
         inputs:
           codeCoverageTool: 'JaCoCo'
-          summaryFileLocation: '**/Coverage-Pester.xml'
+          summaryFileLocation: '**/coverage.xml'
           pathToSources: '$(System.DefaultWorkingDirectory)/src/Scriptbook/Public'
 
       - task: PublishTestResults@2
         condition: always()
         inputs:
           testRunner: 'NUnit'
-          testResultsFiles: '**/Test-Pester.XML'
+          testResultsFiles: '**/testResults.xml'
           testRunTitle: 'Module'
           failTaskOnFailedTests: true
         displayName: 'Publish Test Results'
@@ -75,14 +75,14 @@ jobs:
         condition: always()
         inputs:
           codeCoverageTool: 'JaCoCo'
-          summaryFileLocation: '**/Coverage-Pester.xml'
+          summaryFileLocation: '**/coverage.xml'
           pathToSources: '$(System.DefaultWorkingDirectory)/src/Scriptbook/Public'
 
       - task: PublishTestResults@2
         condition: always()
         inputs:
           testRunner: 'NUnit'
-          testResultsFiles: '**/Test-Pester.XML'
+          testResultsFiles: '**/testResults.xml'
           testRunTitle: 'Module'
           failTaskOnFailedTests: true
         displayName: 'Publish Test Results'

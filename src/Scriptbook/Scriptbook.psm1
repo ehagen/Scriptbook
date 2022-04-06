@@ -80,6 +80,7 @@ if ($core)
     }
 }
 
+$Global:ConfigurePreference = $false
 $Global:ScriptbookSimpleHost = $false
 if ($ImportVars -and $ImportVars.ContainsKey('SimpleHost'))
 {

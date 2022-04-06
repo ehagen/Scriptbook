@@ -18,6 +18,7 @@ Save-ParameterValues -Name 'Params' -Path './my-parameter-values.json'
 #>
 function Save-ParameterValues
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [ValidateNotNullOrEmpty()]
@@ -26,13 +27,38 @@ function Save-ParameterValues
         $Path
     )
 
-    if ($PSCmdlet.ShouldProcess("Save-ParameterValues"))
+    if ($PSCmdlet.ShouldProcess($Path))
     {
         $ctx = Get-WorkflowContext
         if ($ctx.ContainsKey($Name))
         {
-            # TODO Add SecureStringStorage support
-            $ctx[$Name] | ConvertTo-Json -Depth 10 | Set-Content -Path $Path
+            if ($ctx[$Name] -is [PSCustomObject])
+            {
+                $object = $ctx[$Name]
+            }
+            else
+            {
+                $object = [PSCustomObject]$ctx[$Name]
+            }
+
+            function Set-Props
+            {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+                param($Object)
+
+                foreach ($prop in $Object.PsObject.Properties)
+                {
+                    if ($prop.Value -is [SecureString])
+                    {
+                        $prop.Value = [SecureStringStorage]$prop.Value
+                    }
+                }
+            }
+
+            # fix SecureString references
+            Set-Props $object
+
+            $object | ConvertTo-Json -Depth 10 | Set-Content -Path $Path
         }
         else
         {

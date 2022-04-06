@@ -72,6 +72,7 @@ Set-Alias -Name Start-Saga -Value Start-Workflow -Scope Global -Force -WhatIf:$f
 Set-Alias -Name Start-Pipeline -Value Start-Workflow -Scope Global -Force -WhatIf:$false
 function Start-Workflow
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "")]
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Position = 0)]
@@ -104,6 +105,14 @@ function Start-Workflow
         [switch]$Plan,
         [switch]$Documentation
     )
+
+    if ($Global:ConfigurePreference)
+    {
+        # configuring is taking place in Parameters functions
+        # when configuring workflow we don't execute workflow
+        Write-Verbose 'Workflow not started because we are in Configure Mode'
+        return;
+    }
 
     if ($ConfirmPreference -eq 'low')
     {
@@ -139,6 +148,7 @@ function Start-Workflow
         $Script:WorkflowLocation = Get-Location
     }
     $ctx = Get-RootContext
+    $ctx.Verbose = $VerbosePreference -eq 'Continue'
     $ctx.NoLogging = $NoLogging.IsPresent
     $ctx.InTest = $TestWorkflow.IsPresent
     $isWhatIf = $WhatIfPreference
@@ -146,6 +156,16 @@ function Start-Workflow
     {
         $WhatIfPreference = $true
         $isWhatIf = $WhatIfPreference
+    }
+
+    if ($ctx.Verbose)
+    {
+        Write-Verbose "Environment Info"
+        Write-Verbose "     Computer: $([System.Environment]::MachineName)"
+        Write-Verbose "           Os: $([System.Environment]::OSVersion.VersionString)"
+        Write-Verbose "       WhoAmI: $([System.Environment]::UserName)"
+        Write-Verbose "   Powershell: $($PSVersionTable.PsVersion)"
+        Write-Verbose "CurrentFolder: $(Get-Location)"
     }
 
     $scriptName = $Script:MyInvocation.ScriptName
@@ -356,7 +376,7 @@ function Start-Workflow
                         $testsSkipped++ 
                     } 
                 }
-                $testsPassed = $tests-$testsSkipped-$testsWithError
+                $testsPassed = $tests - $testsSkipped - $testsWithError
                 Write-Host "$(Get-AnsiColoredString -Color 32 -String "Tests Passed: $testsPassed" -NotSupported:($testsWithError -gt 0)), $(Get-AnsiColoredString -Color 101 -String "Failed: $testsWithError" -NotSupported:($testsWithError -eq 0)), $(Get-AnsiColoredString -Color 93 -String "Skipped: $testsSkipped" -NotSupported:($testsSkipped -eq 0))"
                 if ($tests -gt 0)
                 {

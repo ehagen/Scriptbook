@@ -126,9 +126,18 @@ Action Test {
     try
     {
         Assert-Version dotnet 3.0 -Minimum
-        $loc = Get-Location
-        $r = Invoke-Pester -Script $loc -PassThru -OutputFile "$loc/Test-Pester.xml" -OutputFormat 'JUnitXML' -ExcludeTagFilter 'e2e'
-        Show-PesterOutput $r
+
+        $config = [PesterConfiguration]::Default
+        $config.TestResult.Enabled = $true
+        $config.TestResult.OutputFormat = 'JUnitXml'
+        $config.CodeCoverage.Enabled = $false
+        $config.CodeCoverage.Path = (Join-Path (Get-Location) './../Scriptbook')
+        $config.CodeCoverage.OutputFormat = 'JaCoCo'
+        $config.CodeCoverage.CoveragePercentTarget = 50 #75
+        $config.Run.PassThru = $true
+        $config.Run.Throw = $false
+        $config.Output.Verbosity = 'Detailed'
+        $r = Invoke-Pester -Configuration $config
         $Script:TestResult = $r.Result -eq 'Passed'
     }
     finally
@@ -230,10 +239,18 @@ Action Publish -If {$Publish} {
     }
 }
 
+Action Finish -If {!$Publish} {
+    if (!$Script:TestResult)
+    {
+        Throw "Tests failed. Check test results."
+    }
+}
+
+$containerSupport = $false
 $options = @{}
 if (!$env:SYSTEM_TEAMPROJECT -and !$env:GITHUB_ACTIONS)
 {
-    $options = @{Container = $true; ContainerOptions = @{Root = '..'; Isolated = $true } }
+    $options = @{Container = $containerSupport; ContainerOptions = @{Root = '..'; Isolated = $true } }
 }
 
 if ($env:SYSTEM_ACCESSTOKEN)

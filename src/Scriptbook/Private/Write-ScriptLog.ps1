@@ -1,12 +1,12 @@
 function Write-ScriptLog($Msg, [switch]$AsError, [switch]$AsWarning, [switch]$AsAction, [switch]$AsWorkflow, [switch]$AsSkipped, [switch]$Verbose)
 {
     $ctx = Get-RootContext
-    if ($ctx.NoLogging -and ($VerbosePreference -ne 'Continue') )
+    if ($ctx.NoLogging -and $ctx.Verbose )
     {
         return
     }
 
-    if ($Verbose.IsPresent -and ($VerbosePreference -ne 'Continue'))
+    if ($Verbose.IsPresent -and $ctx.Verbose)
     {
         return
     }
@@ -44,9 +44,9 @@ function Write-ScriptLog($Msg, [switch]$AsError, [switch]$AsWarning, [switch]$As
             $Msg.Remove('command');
         }
         Write-Info $m @colors; Global:Write-OnLog -Msg $m
-        if ($VerbosePreference -eq 'Continue') 
+        if ($ctx.Verbose) 
         {
-            Write-Info ($Msg.GetEnumerator() | Sort-Object -Property Name | ForEach-Object { '@{0}:{1}' -f $_.key, $_.value }) @colors
+            Write-Info ($Msg.GetEnumerator() | Sort-Object -Property Name | ForEach-Object { 'VERBOSE: @{0}:{1}' -f $_.key, $_.value }) -ForegroundColor Yellow
         }
     }
     else

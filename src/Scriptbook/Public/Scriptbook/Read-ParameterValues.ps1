@@ -18,6 +18,8 @@ Read-ParameterValues -Name 'Params' -Path './my-parameter-values.json'
 #>
 function Read-ParameterValues
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [ValidateNotNullOrEmpty()]
@@ -28,8 +30,7 @@ function Read-ParameterValues
 
     if ($PSCmdlet.ShouldProcess("Read-ParameterValues"))
     {
-        # TODO Add SecureStringStorage support
-        $internalValue = Get-Content -Path $Path | ConvertFrom-Json -AsHashtable
+        $internalValue = Read-ParameterValuesInternal -Path $Path
 
         if (!(Get-Variable -Name Context -ErrorAction Ignore -Scope Global))
         {
