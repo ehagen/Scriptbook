@@ -129,7 +129,8 @@ Action Test {
 
         $config = [PesterConfiguration]::Default
         $config.TestResult.Enabled = $true
-        $config.CodeCoverage.Enabled = $true
+        $config.TestResult.OutputFormat = 'JUnitXml'
+        $config.CodeCoverage.Enabled = $false
         $config.CodeCoverage.Path = (Join-Path (Get-Location) './../Scriptbook')
         $config.CodeCoverage.OutputFormat = 'JaCoCo'
         $config.CodeCoverage.CoveragePercentTarget = 50 #75
