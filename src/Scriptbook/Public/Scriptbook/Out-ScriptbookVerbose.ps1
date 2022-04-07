@@ -12,9 +12,13 @@ Value to write to verbose stream
 
 'Hello' | Out-ScriptbookVerbose
 
+or 
+
+'Hello' | Out-Null
+
 #>
 
-Set-Alias -Name Out-Null -Value Out-ScriptbookVerbose -Scope Global -Force -WhatIf:$false
+Set-Alias -Name Out-Null -Value Out-ScriptbookVerbose -Scope Global -Force -WhatIf:$false -ErrorAction Ignore
 function Out-ScriptbookVerbose
 {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseProcessBlockForPipelineCommand", "")]
