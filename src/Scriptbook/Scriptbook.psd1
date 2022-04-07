@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Scriptbook.psm1'
-    ModuleVersion     = '0.6.0'
+    ModuleVersion     = '0.6.1'
     GUID              = '05a95b01-2890-480f-a4ac-f40bc52d6c82'
     Author            = 'Edwin Hagen'
     CompanyName       = 'Tedon Technology BV'
@@ -13,14 +13,15 @@
         'Get-DecryptedSecret', 'Get-EncryptedSecret', 'Get-LocalCredential', 'Assert-Condition', 'Assert-Version',
         'Get-BoundParametersWithDefaultValue', 'Set-EnvironmentVar', 'Get-EnvironmentVar', 'Test-PSProperty', 'Get-PSPropertyValue', 'Start-ShellCmd', 'Write-Info',
         'FormatTaskName', 'Include', 'Invoke-Psake', 'Invoke-Task', 'Properties', 'Start-PSakeWorkflow', 'Task', 'TaskSetup', 'TaskTearDown',
-        'Add-WorkflowNotification', 'Out-ScriptbookHost', 'Variables', 'Parameters', 'Import-Parameters', 'Save-ParameterValues', 'Read-ParameterValues', 'Read-ParameterValuesFromHost'
+        'Add-WorkflowNotification', 'Out-ScriptbookHost', 'Variables', 'Parameters', 'Import-Parameters', 'Save-ParameterValues', 'Read-ParameterValues', 'Read-ParameterValuesFromHost',
+        'Out-ScriptbookVerbose', 'Edit-WorkflowParameters', 'Read-ParameterValuesFromHost', 'Set-WorkflowInConfigureMode', 'Get-IsPowerShellStartedInNonInteractiveMode', 'New-SecureStringStorage'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
     AliasesToExport   = @(
         'Start-Flow', 'Start-Saga', 'Start-Pipeline', 'Saga', 'Flow', 'Pipeline', 'Step', 'Job', 'Test', 'Tests', 'Activity', 'Chore', 'Stage', 'Override', 'Info', 'Setup', 'Teardown'
         'Documentation', 'Initialize-Action', 'Complete-Action', 'Import-Step', 'Import-Test', 'Invoke-Step', 'Execute', 'Exec', 'Assert', 'Get-ActionOutput', 'Get-ActionOutputValue',
-        'Out-Info'
+        'Out-Info', 'Out-Null'
     )
     PrivateData       = @{
         PSData = @{

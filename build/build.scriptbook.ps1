@@ -28,8 +28,6 @@ Write-Info "          Time: $((Get-Date).ToString('s'))"
 Write-Info "Current-folder: $(Get-Location)"
 Write-Info ""
 
-. ./build.helpers.ps1
-
 Action Init {
     Get-ChildItem env:* | Sort-Object -Property Name | Out-String | Write-Info
 }
@@ -99,7 +97,7 @@ Action Sign -Depends Compile {
         }
         catch
         {
-            Write-Info "Unable to load certificate from '$certLoc'" + $_
+            Write-Info "Unable to load certificate from '$certLoc' $($_.Exception)"
         }
     }
 
@@ -129,11 +127,18 @@ Action Test {
 
         $config = [PesterConfiguration]::Default
         $config.TestResult.Enabled = $true
-        $config.TestResult.OutputFormat = 'JUnitXml'
-        $config.CodeCoverage.Enabled = $false
-        $config.CodeCoverage.Path = (Join-Path (Get-Location) './../Scriptbook')
-        $config.CodeCoverage.OutputFormat = 'JaCoCo'
-        $config.CodeCoverage.CoveragePercentTarget = 50 #75
+        if ($env:GITHUB_ACTIONS)
+        {
+            $config.TestResult.OutputFormat = 'JUnitXml'
+            $config.CodeCoverage.Enabled = $false
+        }
+        elseif ($env:SYSTEM_TEAMPROJECT -or !($env:VSCODE_GIT_ASKPASS_NODE) )
+        {
+            $config.CodeCoverage.Enabled = $true
+            $config.CodeCoverage.Path = (Join-Path (Get-Location) './../Scriptbook')
+            $config.CodeCoverage.OutputFormat = 'JaCoCo'
+            $config.CodeCoverage.CoveragePercentTarget = 50 #75
+        }
         $config.Run.PassThru = $true
         $config.Run.Throw = $false
         $config.Output.Verbosity = 'Detailed'
@@ -221,7 +226,7 @@ Action MakeDocs -If { $Publish } {
     Pop-Location
 }
 
-Action Publish -If {$Publish} {
+Action Publish -If { $Publish } {
     if (!$Script:TestResult)
     {
         Throw "Tests failed. No publish of package to feed allowed"
@@ -239,7 +244,7 @@ Action Publish -If {$Publish} {
     }
 }
 
-Action Finish -If {!$Publish} {
+Action Finish -If { !$Publish } {
     if (!$Script:TestResult)
     {
         Throw "Tests failed. Check test results."

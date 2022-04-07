@@ -2,7 +2,7 @@ name: Build Scriptbook
 
 on:
  push:
-  branches: [ master ]
+  branches: [ dev ]
  pull_request:
     branches: [ master ]
 
@@ -36,7 +36,17 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v1
         if: always() && ${{ runner.os == 'Linux' }}
         with:
-          files: ${{github.workspace}}/src/tests/**/*.xml
+          files: ${{github.workspace}}/src/tests/**/testResults.xml
+
+      # - name: Add coverage to PR
+      #   id: jacoco
+      #   uses: madrapps/jacoco-report@v1.2
+      #   if: always() && ${{ runner.os == 'Linux' }}
+      #   with:
+      #     paths: ${{ github.workspace }}/src/tests/Utilities/coverage.xml
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     min-coverage-overall: 40
+      #     min-coverage-changed-files: 60
 
 
   test:
@@ -66,4 +76,4 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v1
         if: ${{ runner.os == 'Linux' }}
         with:
-          files: ${{github.workspace}}/src/tests/**/*.xml
+          files: ${{github.workspace}}/src/tests/**/testResults.xml

@@ -4,6 +4,15 @@
 ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/Scriptbook.svg?label=PSGallery%20Downloads&logo=PowerShell&style=flat-square)
 [![Build Status](https://dev.azure.com/tedon/TD.Deploy/_apis/build/status/ehagen.Scriptbook?branchName=master)](https://dev.azure.com/tedon/TD.Deploy/_build/latest?definitionId=52&branchName=master)
 
+## [0.6.1]
+
+```plain
+### Fixed
+- Fixed Wrong file name function Out-ScriptbookVerbose
+- Fixed Test Results report and Code Coverage report in Github Actions and Azure DevOps
+
+```
+
 ## [0.6.0]
 
 ```plain

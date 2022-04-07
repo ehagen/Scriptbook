@@ -422,7 +422,7 @@ Describe 'Simple Workflows' {
 
         Action Hello3 {
             Write-Info "Hello3"
-            'Hello3 from Verbose' | Out-Null
+            'Hello3 from Verbose' | Out-ScriptbookVerbose
             Invoke-Action Hello
             Invoke-Action Hello
             $script:cnt++
