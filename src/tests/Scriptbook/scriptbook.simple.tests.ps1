@@ -410,13 +410,13 @@ Describe 'Simple Workflows' {
         # act
         Action Hello -Multiple {
             Write-Info "Hello"
-            'Hello from Verbose' | Out-Null
+            'Hello from Verbose' | Out-NullSb
             $script:cnt++
         }
 
         Action Hello2 {
             Write-Info "Hello2"
-            'Hello2 from Verbose' | Out-Null
+            'Hello2 from Verbose' | Out-NullSb
             $script:cnt++
         }
 
@@ -430,7 +430,7 @@ Describe 'Simple Workflows' {
 
         Action GoodBy {
             Write-Info "GoodBy"
-            'Goodby from Verbose' | Out-Null
+            'Goodby from Verbose' | Out-Verbose
             $script:cnt++
         }
 

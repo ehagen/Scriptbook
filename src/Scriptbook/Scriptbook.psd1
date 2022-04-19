@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Scriptbook.psm1'
-    ModuleVersion     = '0.6.1'
+    ModuleVersion     = '0.6.2'
     GUID              = '05a95b01-2890-480f-a4ac-f40bc52d6c82'
     Author            = 'Edwin Hagen'
     CompanyName       = 'Tedon Technology BV'
@@ -21,7 +21,7 @@
     AliasesToExport   = @(
         'Start-Flow', 'Start-Saga', 'Start-Pipeline', 'Saga', 'Flow', 'Pipeline', 'Step', 'Job', 'Test', 'Tests', 'Activity', 'Chore', 'Stage', 'Override', 'Info', 'Setup', 'Teardown'
         'Documentation', 'Initialize-Action', 'Complete-Action', 'Import-Step', 'Import-Test', 'Invoke-Step', 'Execute', 'Exec', 'Assert', 'Get-ActionOutput', 'Get-ActionOutputValue',
-        'Out-Info', 'Out-Null'
+        'Out-Info', 'Out-NullSb', 'Out-Verbose'
     )
     PrivateData       = @{
         PSData = @{
