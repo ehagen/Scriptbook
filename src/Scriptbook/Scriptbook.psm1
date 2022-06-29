@@ -180,39 +180,34 @@ else
     if (Test-Path $cacheTimeFile)
     {
         # determine if we need to load the modules from repository again
-        # now we check once a day the repository feed if new version are available 
-        # to speed up the start-time of our workbooks
+        # we check once a day the repository feed if new versions are available
+        # this to speed up the start-time of our workflows
 
-        function TestPropInt2([object]$Object, [string]$Name)
+        function GetValidDatePart($Value)
         {
-            foreach ($prop in $Object.PSObject.Properties)
-            {
-                if ($prop.Name -eq $Name)
-                {
-                    return $true
-                }
+            $datePart = $null
+            if ($Value -is [string])
+            {            
+                $datePart = [System.DateTime]::Parse($Value).Date
             }
-            return $false
+            elseif ($Value -is [DateTime])
+            {
+                $datePart = $Value.Date
+            }
+            return $datePart
         }
 
         $md = $null
         $moduleCache = Get-Content -Path $cacheTimeFile -Raw | ConvertFrom-Json
-        if (TestPropInt2 -Object $moduleCache -Name 'Time') 
+        if ($moduleCache.PSobject.Properties.Name -match "Time")
         {
-            if (TestPropInt2 -Object $moduleCache.Time -Name 'Value')
+            if ($moduleCache.Time.PSobject.Properties.Name -match "Value")
             {
-                if ($moduleCache.Time.Value -is [string])
-                {            
-                    $md = [System.DateTime]::Parse($moduleCache.Time.Value).Date
-                }
-                elseif ($moduleCache.Time.Value -is [DateTime])
-                {
-                    $md = $moduleCache.Time.Value.Date
-                }
+                $md = GetValidDatePart $moduleCache.Time.Value
             }
             else
             {
-                $md = [System.DateTime]::Parse($moduleCache.Time).Date
+                $md = GetValidDatePart $moduleCache.Time
             }
             if ($md -and ($md -eq ((Get-Date).Date)))
             {
