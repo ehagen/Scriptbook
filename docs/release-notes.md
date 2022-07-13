@@ -4,6 +4,15 @@
 ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/Scriptbook.svg?label=PSGallery%20Downloads&logo=PowerShell&style=flat-square)
 [![Build Status](https://dev.azure.com/tedon/TD.Deploy/_apis/build/status/ehagen.Scriptbook?branchName=master)](https://dev.azure.com/tedon/TD.Deploy/_build/latest?definitionId=52&branchName=master)
 
+## [0.6.4]
+
+```plain
+### Fixed
+- Added parameters merge support by default, merges parameter values defined in script with values loaded from file
+
+
+```
+
 ## [0.6.3]
 
 ```plain

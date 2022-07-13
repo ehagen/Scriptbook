@@ -12,7 +12,7 @@ Name of created Parameters PowerShell variable, prevent naming conflicts by choo
 Location of Parameters values in json format
 
 .PARAMETER Override
-Allow the current Parameters to be over-written
+Allow the current Parameters to be over-written, default is to merge parameters from file and script
 
 .PARAMETER Code
 HashTable with Parameters
@@ -75,7 +75,7 @@ function Parameters
 
     if (!($Override.IsPresent) -and (Get-Variable -Name Context -ErrorAction Ignore -Scope Global) -and $Global:Context.ContainsKey($Name))
     {
-        Throw "Duplicate Parameters name found, use Override to replace current Parameters '$Name'"
+        Write-Warning "Duplicate Parameters name  '$Name' found, use Override to replace current Parameter name"
     }
 
     if ($null -eq $Code -and !$Path)
@@ -85,22 +85,35 @@ function Parameters
     try
     {
         $value = $null
+        $valueRead = $null
         if ($Path -and (Test-Path $Path -ErrorAction Ignore))
         {
-            $value = Read-ParameterValuesInternal -Path $Path
+            $valueRead = Read-ParameterValuesInternal -Path $Path
         }
 
-        if ($null -eq $value)
+        $value = (Invoke-Command $Code)
+        if (-not (($value -is [HashTable]) -or ($value -is [System.Collections.Specialized.OrderedDictionary])))
         {
-            $value = (Invoke-Command $Code)
-            if (-not (($value -is [HashTable]) -or ($value -is [System.Collections.Specialized.OrderedDictionary])))
-            {
-                throw 'No HashTable found in Parameters' 
-            }
+            throw 'No HashTable found in Parameters, minimal an empty hashtable is required'
         }
 
         # convert parameters HashTable to internal HashTable == context, we support different formats of parameters
-        $internalValue = $value    
+        if ($valueRead -and $Override.IsPresent)
+        {
+            $internalValue = $valueRead
+        }
+        elseif ($valueRead)
+        {
+            foreach ($v in $valueRead.GetEnumerator())
+            {
+                $value[$v.Key] = $v.Value
+            }
+            $internalValue = $value
+        }
+        else
+        {
+            $internalValue = $value
+        }
 
         # add Version variable if not found, init with 1.0.0
         if (!($internalValue.Contains('Version')))
