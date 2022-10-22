@@ -158,6 +158,57 @@ Describe 'Scriptbook workflows with Parameters' {
         $script:cnt | Should -Be 3
     }
 
+    It 'Should run scriptbook workflow with saving & reading workflow parameters' {
+        # arrange
+        $script:cnt = 0;
+        $fileName = './my-parameter-values.json'
+
+        # act
+        Parameters -Name 'Params' -Path $fileName {
+            @{
+                ParamOne    = 'one'
+                ParamTwo    = 'two'
+            }
+        }
+
+        Save-ParameterValues -Name 'Params' -Path $fileName
+
+        Parameters -Name 'Params' -Path $fileName {
+            @{
+                ParamOne    = '1'
+                ParamTwo    = '2'
+                ParamThree    = '3'
+            }
+        }
+
+        Action Hello {
+            Write-Info "Hello"
+            $script:cnt++
+        }
+
+        Action GoodBy {
+            Write-Info "GoodBy"
+                    $script:cnt++
+        }
+
+        try
+        {
+            Start-Workflow -Name 'Workflow with saving & reading workflow parameters'
+        }
+        finally
+        {
+            Remove-Item -Path $filename -Force -ErrorAction Ignore
+
+        }
+
+        # assert
+        $script:cnt | Should -Be 2
+
+        $Params.ParamOne | Should -Be 'one'
+        $Params.ParamTwo | Should -Be 'two'
+        $Params.ParamThree | Should -Be '3'
+    }
+
     It 'Should run scriptbook workflow with saving & reading workflow parameters secure' {
         # arrange
         $script:cnt = 0;
@@ -207,7 +258,7 @@ Describe 'Scriptbook workflows with Parameters' {
 
         try
         {
-            Start-Workflow -Name 'Workflow with Complex Parameters'
+            Start-Workflow -Name 'Workflow with with saving & reading workflow parameters secure'
         }
         finally
         {
