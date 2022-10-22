@@ -32,6 +32,27 @@ Action Init {
     Get-ChildItem env:* | Sort-Object -Property Name | Out-String | Write-Info
 }
 
+Action AnalyzeSecrets {
+    $fileType = @(
+        ".ps1"
+        ".psm1"
+        ".psd1"
+        ".md"
+        ".txt"
+        ".xml"
+        ".csv"
+        ".bicep"
+        ".json"
+        '.cs'
+        '.config'
+    )
+    $result = Find-Secret -OutputPreference Object -Filetype $fileType -Path ./.. # -Verbose
+    if ($result)
+    {
+        Throw "Secret Scanner ($result) secret(s) found"
+    }    
+}
+
 Action Analyze {
     $scriptAnalysisSettingsPath = '../src/tests/ScriptAnalyzerSettings.psd1'
     $result = Invoke-ScriptAnalyzer -Path ../src/$PSModule -Settings $scriptAnalysisSettingsPath -Recurse -Verbose:$VerbosePreference

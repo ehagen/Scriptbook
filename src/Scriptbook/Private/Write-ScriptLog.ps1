@@ -1,12 +1,7 @@
 function Write-ScriptLog($Msg, [switch]$AsError, [switch]$AsWarning, [switch]$AsAction, [switch]$AsWorkflow, [switch]$AsSkipped, [switch]$Verbose)
 {
     $ctx = Get-RootContext
-    if ($ctx.NoLogging -and $ctx.Verbose )
-    {
-        return
-    }
-
-    if ($Verbose.IsPresent -and $ctx.Verbose)
+    if ($ctx.NoLogging -and (!$ctx.Verbose -or !$Verbose.IsPresent))
     {
         return
     }

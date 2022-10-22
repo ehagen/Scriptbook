@@ -25,7 +25,10 @@ Import-Module ../src/Scriptbook/Scriptbook.psm1 -Force -Args @{
         },
         @{
             Module = 'platyPS' 
-        }
+        },
+        @{
+            Module = 'PSSecretScanner'
+        }        
     ) 
 }
 
