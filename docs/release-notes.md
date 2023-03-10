@@ -4,6 +4,12 @@
 ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/Scriptbook.svg?label=PSGallery%20Downloads&logo=PowerShell&style=flat-square)
 [![Build Status](https://dev.azure.com/tedon/TD.Deploy/_apis/build/status/ehagen.Scriptbook?branchName=master)](https://dev.azure.com/tedon/TD.Deploy/_build/latest?definitionId=52&branchName=master)
 
+## [0.6.4] 2023-03-11
+
+```plain
+### Fixed
+- Fixed docker volume mappings usage
+
 ## [0.6.4] 2022-10-22
 
 ```plain

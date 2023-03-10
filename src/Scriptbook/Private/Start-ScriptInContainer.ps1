@@ -116,7 +116,8 @@ function Start-ScriptInContainer
     {
         $workFolderName = 'home'
         $volumeVars = [System.Collections.ArrayList]@('-v', "`"$($scriptPath):/Workflow/Scripts`"", '-v', "`"$($userModulePath):/Workflow/ModulePath`"", '-v', "`"$($scriptbookModulePath):/Workflow/Scriptbook`"")
-    }    
+    }
+
     if ($env:RUNNER_TOOLSDIRECTORY)
     {
         [void]$volumeVars.Add('-v'); [void]$volumeVars.Add("`"$($env:RUNNER_TOOLSDIRECTORY):/opt/hostedtoolcache`"")
@@ -324,6 +325,22 @@ if (`$inContainer)
         $useSeparateDockerCommands = -not $Options.Run
     }
 
+    function Start-Docker
+    {
+        [CmdletBinding()]
+        param(
+            [Parameter(ValueFromRemainingArguments)]$Remaining
+        )
+        $a = $null
+        foreach ($item in $Remaining)
+        {
+            $a += "$($item) "
+        }
+        Write-Verbose "Start-Docker $($a)"
+        $r = Start-ShellCmd -Progress -Command docker -Arguments $a
+        return $r
+    }
+
     $containerStarted = $false
     try
     {
@@ -337,7 +354,7 @@ if (`$inContainer)
 
         if ($useSeparateDockerCommands)
         {
-            $r = docker create @envVars @volumeVars --platform=$platform --tty --interactive --name "$containerName" $cImage
+            $r = Start-Docker create @envVars $volumeVars --platform=$platform --tty --interactive --name "$containerName" $cImage
             if ($LASTEXITCODE -ne 0) { Throw "Error in docker create for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode $r" }
 
             if ($File -and $Isolated.IsPresent)
@@ -378,7 +395,7 @@ if (`$inContainer)
         }
         else
         {
-            docker run @envVars @volumeVars --platform=$platform --name "$containerName" $cImage pwsh -NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand $encodedCommand
+            Start-Docker run @envVars $volumeVars --platform=$platform --name "$containerName" $cImage pwsh -NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand $encodedCommand
             if ($LASTEXITCODE -ne 0) { Throw "Error in docker run for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode" }
         }
     }
