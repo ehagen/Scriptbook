@@ -2,7 +2,7 @@ Set-Location $PSScriptRoot
 
 Import-Module ../../Scriptbook/Scriptbook.psm1 -Force
 
-Action Hello -Container -ContainerOptions @{Root = '..'; Context = 'default'; } {
+Action Hello -Container -ContainerOptions @{Root = '..'; Context = 'default'; EnvVarPrefixes = @(); } {
     Write-Info "Hello"
     Write-Info " Computer details"
     Write-Info "      Computer: $([Environment]::MachineName)"

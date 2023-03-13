@@ -126,6 +126,9 @@ function Start-ScriptInContainer
     $envVars = [System.Collections.ArrayList]@('-e', 'InScriptbookContainer=True', '-e', "Script=$scriptName", '-e', "Action=$ActionName" )
     foreach ($item in Get-ChildItem env:SCRIPTBOOK_*) { [void]$envVars.Add('-e'); [void]$envVars.Add("$($item.Name)=$($item.Value)"); }
 
+    foreach ($item in Get-ChildItem env:ARM_*) { [void]$envVars.Add('-e'); [void]$envVars.Add("$($item.Name)=$($item.Value)"); }
+    foreach ($item in Get-ChildItem env:AZURE_*) { [void]$envVars.Add('-e'); [void]$envVars.Add("$($item.Name)=$($item.Value)"); }
+
     # Add Azure DevOps & github env vars
     if ($env:SYSTEM_TEAMPROJECT)
     {
@@ -138,6 +141,14 @@ function Start-ScriptInContainer
     {
         foreach ($item in Get-ChildItem env:GITHUB_*) { [void]$envVars.Add('-e'); [void]$envVars.Add("$($item.Name)=$($item.Value)"); }
         foreach ($item in Get-ChildItem env:RUNNER_*) { [void]$envVars.Add('-e'); [void]$envVars.Add("$($item.Name)=$($item.Value)"); }
+    }
+
+    if ($Options.ContainsKey('EnvVarPrefixes'))
+    {
+        foreach ($prefix in $Options.EnvVarPrefixes)
+        {
+            foreach ($item in Get-ChildItem env:"$($prefix)*") { [void]$envVars.Add('-e'); [void]$envVars.Add("$($item.Name)=$($item.Value)"); }
+        }
     }
 
     if (!$File)
@@ -325,7 +336,7 @@ if (`$inContainer)
         $useSeparateDockerCommands = -not $Options.Run
     }
 
-    function Start-Docker
+    function StartWithDocker
     {
         [CmdletBinding()]
         param(
@@ -336,7 +347,7 @@ if (`$inContainer)
         {
             $a += "$($item) "
         }
-        Write-Verbose "Start-Docker $($a)"
+        Write-Verbose "StartWithDocker $($a)"
         $r = Start-ShellCmd -Progress -Command docker -Arguments $a
         return $r
     }
@@ -354,7 +365,7 @@ if (`$inContainer)
 
         if ($useSeparateDockerCommands)
         {
-            $r = Start-Docker create @envVars $volumeVars --platform=$platform --tty --interactive --name "$containerName" $cImage
+            $r = StartWithDocker create @envVars $volumeVars --platform=$platform --tty --interactive --name "$containerName" $cImage
             if ($LASTEXITCODE -ne 0) { Throw "Error in docker create for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode $r" }
 
             if ($File -and $Isolated.IsPresent)
@@ -395,7 +406,7 @@ if (`$inContainer)
         }
         else
         {
-            Start-Docker run @envVars $volumeVars --platform=$platform --name "$containerName" $cImage pwsh -NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand $encodedCommand
+            StartWithDocker run @envVars $volumeVars --platform=$platform --name "$containerName" $cImage pwsh -NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand $encodedCommand
             if ($LASTEXITCODE -ne 0) { Throw "Error in docker run for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode" }
         }
     }

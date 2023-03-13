@@ -9,6 +9,7 @@
 ```plain
 ### Fixed
 - Fixed docker volume mappings usage
+- Added docker EnvVarPrefixes support
 
 ## [0.6.4] 2022-10-22
 
