@@ -20,7 +20,7 @@ function Start-ScriptInContainer
     }
 
     # determine Scriptbook module path
-    $m = Get-Module Scriptbook
+    $m = Get-Module Scriptbook | Select-Object -Last 1
     if ($null -eq $m)
     {
         Throw "Scriptbook module not found in Start-ScriptInContainer"
@@ -95,7 +95,7 @@ function Start-ScriptInContainer
     }
 
     $containerName = New-Guid
-    $cImage = 'mcr.microsoft.com/dotnet/sdk:5.0' #TODO !!EH hardcoded for now, move to Import-Module?
+    $cImage = 'mcr.microsoft.com/dotnet/sdk:7.0' #TODO !!EH hardcoded for now, move to Import-Module?
     if ($Options.ContainsKey('Image') -and ![string]::IsNullOrEmpty($Options.Image))
     {
         $cImage = $Options.Image
@@ -104,6 +104,18 @@ function Start-ScriptInContainer
     if ($Options.ContainsKey('Isolated'))
     {
         $Isolated = $Options.Isolated
+    }
+
+    $dockerCredentials = $null
+    if ($Options.ContainsKey('Credentials') -and ($null -ne $Options.Credentials))
+    {
+        $dockerCredentials = $Options.Credentials
+    }
+
+    $dockerRegistry = $null
+    if ($Options.ContainsKey('Registry') -and ($null -ne $Options.Registry))
+    {
+        $dockerRegistry = $Options.Registry
     }
 
     # map scriptbook module, user modules, and script
@@ -363,6 +375,12 @@ if (`$inContainer)
             if ($LASTEXITCODE -ne 0) { Throw "Error in docker context switch $dockerContext : $LastExitCode $r" }
         }
 
+        if ($dockerCredentials -and $dockerRegistry)
+        {
+            $r = $dockerCredentials.Password | docker login $dockerRegistry -u $dockerCredentials.Username --password-stdin
+            if ($LASTEXITCODE -ne 0) { Throw "Error in docker login : $LastExitCode $r" }
+        }
+    
         if ($useSeparateDockerCommands)
         {
             $r = StartWithDocker create @envVars $volumeVars --platform=$platform --tty --interactive --name "$containerName" $cImage

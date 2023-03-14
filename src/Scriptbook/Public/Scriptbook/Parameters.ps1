@@ -94,7 +94,7 @@ function Parameters
         $value = (Invoke-Command $Code)
         if (-not (($value -is [HashTable]) -or ($value -is [System.Collections.Specialized.OrderedDictionary])))
         {
-            throw 'No HashTable found in Parameters, minimal an empty hashtable is required'
+            throw 'No HashTable found in ''Parameters'', minimal an empty hashtable is required in Parameters Action'
         }
 
         # convert parameters HashTable to internal HashTable == context, we support different formats of parameters

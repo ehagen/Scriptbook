@@ -10,6 +10,10 @@
 ### Fixed
 - Fixed docker volume mappings usage
 - Added docker EnvVarPrefixes support
+- Fixed Import multiple Scriptbook modules in Start Script In Container
+- Changed default to .Net Sdk 7.0 in Container Support
+
+```
 
 ## [0.6.4] 2022-10-22
 
