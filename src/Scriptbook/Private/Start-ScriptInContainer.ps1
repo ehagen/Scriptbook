@@ -13,10 +13,17 @@ function Start-ScriptInContainer
         [scriptblock]$Code
     )
 
-    if ($null -eq (Get-Command docker -ErrorAction Ignore))
+    if ($Options.ContainsKey('Group') -and $Options.ContainsKey('Instance') )
     {
-        Write-Warning 'Docker not installed or found on this system'
-        return
+        # no docker used
+    }
+    else
+    {
+        if ($null -eq (Get-Command docker -ErrorAction Ignore))
+        {
+            Write-Warning 'Docker not installed or found on this system'
+            return
+        }
     }
 
     # determine Scriptbook module path
@@ -67,18 +74,25 @@ function Start-ScriptInContainer
     # Get container Os (Windows or Linux)
     $platform = 'linux'
     $windowsContainer = $false
-    try
+    if ($Options.ContainsKey('Group') -and $Options.ContainsKey('Instance') )
     {
-        $r = docker version --format json | ConvertFrom-Json
-        if ($r)
-        {
-            $windowsContainer = $r.Server.Os -eq 'windows'
-            $platform = "$($r.Server.Os)/$($r.Server.Arch)"
-        }
+        # no docker used
     }
-    catch
+    else
     {
-        # circumvent erratic behavior json output docker
+        try
+        {
+            $r = docker version --format json | ConvertFrom-Json
+            if ($r)
+            {
+                $windowsContainer = $r.Server.Os -eq 'windows'
+                $platform = "$($r.Server.Os)/$($r.Server.Arch)"
+            }
+        }
+        catch
+        {
+            # circumvent erratic behavior json output docker
+        }
     }
     if ($Options.ContainsKey('Platform') -and ![string]::IsNullOrEmpty($Options.Platform))
     {
@@ -94,7 +108,7 @@ function Start-ScriptInContainer
         }
     }
 
-    $containerName = New-Guid
+    $containerName = ([Guid]::NewGuid().ToString('n')).SubString(0, 10)
     $cImage = 'mcr.microsoft.com/dotnet/sdk:7.0' #TODO !!EH hardcoded for now, move to Import-Module?
     if ($Options.ContainsKey('Image') -and ![string]::IsNullOrEmpty($Options.Image))
     {
@@ -364,89 +378,200 @@ if (`$inContainer)
         return $r
     }
 
-    $containerStarted = $false
-    try
+    if ($Options.ContainsKey('Group') -and $Options.ContainsKey('Instance') )
     {
-        Write-Verbose "Running container '$containerName' with image '$cImage' in $(Get-Location)"
-
-        if ($dockerContext)
+        $m = Get-Module 'Az.ContainerInstance' -ErrorAction Ignore
+        if ($null -eq $m)
         {
-            $r = docker context use $dockerContext
-            if ($LASTEXITCODE -ne 0) { Throw "Error in docker context switch $dockerContext : $LastExitCode $r" }
+            # try to import module
+            Import-Module Az.ContainerInstance
         }
 
-        if ($dockerCredentials -and $dockerRegistry)
+        $m = Get-Module 'Az.ContainerInstance' -ErrorAction Ignore
+        if ($null -eq $m)
         {
-            $r = $dockerCredentials.Password | docker login $dockerRegistry -u $dockerCredentials.Username --password-stdin
-            if ($LASTEXITCODE -ne 0) { Throw "Error in docker login : $LastExitCode $r" }
+            throw 'Required Az.*, Az.ContainerInstance module not found in start Azure Container Instances, use Import-Module Az or Install-Module Az -Scope CurrentUser to install the Azure PowerShell Az module(s) and login with Connect-Az before running this Action'
         }
-    
-        if ($useSeparateDockerCommands)
-        {
-            $r = StartWithDocker create @envVars $volumeVars --platform=$platform --tty --interactive --name "$containerName" $cImage
-            if ($LASTEXITCODE -ne 0) { Throw "Error in docker create for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode $r" }
 
-            if ($File -and $Isolated.IsPresent)
+        # try to connect with default azure environment variable service principle credentials
+        if ($env:ARM_CLIENT_ID)
+        {
+            Connect-AzAccount -Credential (New-Object System.Management.Automation.PSCredential ($env:ARM_CLIENT_ID, (ConvertTo-SecureString -String $env:ARM_CLIENT_SECRET -AsPlainText -Force))) -Tenant $env:ARM_TENANT_ID -ServicePrincipal -Subscription $env:ARM_SUBSCRIPTION_ID | Out-Null
+        }
+            
+        if ($null -eq (Get-AzContext))
+        {
+            throw 'No AzContext found in start Azure Container Instances, are you logged in to Azure with Connect-Az before running this Action'
+        }
+
+        if (!$Isolated)
+        {
+            throw 'Only Isolated mode supported for now in Azure Container Instances, no volume mapping yet'
+        }
+
+        # create container instance
+        $instance = @{}
+        if ($Options.ContainsKey('Instance'))
+        {
+            $instance = $Options.Instance
+        }
+        if (!($instance.ContainsKey('Name')))
+        {
+            # max size container name is 63 characters with following allowed characters '[a-z0-9]([-a-z0-9]*[a-z0-9])?'
+            # TODO: validate on reg
+            if ($ActionName)
             {
-                # copy script and modules when isolated
-                docker cp "$scriptPath" "$($containerName):/$workFolderName/Scripts"
-                if ($m.RepositorySourceLocation)
-                {
-                    $tmp = Join-Path (Get-TempPath) (New-Guid)
-                    New-Item $tmp -ItemType Directory | Out-Null
-                    try
-                    {                        
-                        $sPath = Join-Path (Join-Path $tmp Scriptbook ) $m.Version
-                        Copy-Item $scriptbookModulePath $sPath -Recurse
-                        docker cp "$tmp" "$($containerName):/$workFolderName/Scriptbook"
-                    }
-                    finally
-                    {
-                        Remove-Item $tmp -Recurse -Force -ErrorAction Ignore
-                    }
-                }
-                else
-                {
-                    docker cp "$scriptbookModulePath" "$($containerName):/$workFolderName/Scriptbook"
-                }
+                $instance.Name = "scriptbook-$($ActionName.ToLower())"
             }
-            $r = docker start "$containerName"
-            if ($LASTEXITCODE -ne 0) { Throw "Error in docker start for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode $r" }
-            $containerStarted = $true
-
-            $r = Start-ShellCmd -Progress -Command 'docker' -Arguments "exec `"$containerName`" pwsh -NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand $encodedCommand"
-            if ($r.ExitCode -ne 0) { Throw "Error in docker exec for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode" }
-            if ([string]::IsNullOrEmpty($r.StdOut)) { Throw "No output found in 'docker exec' command" }
-            if (![string]::IsNullOrEmpty($r.StdErr)) 
+            else
             {
-                Throw "Errors found in output 'docker exec' command $($r.StdErr)"
+                $instance.Name = "scriptbook"
             }
         }
-        else
+        if (!($instance.ContainsKey('Image')))
         {
-            StartWithDocker run @envVars $volumeVars --platform=$platform --name "$containerName" $cImage pwsh -NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand $encodedCommand
-            if ($LASTEXITCODE -ne 0) { Throw "Error in docker run for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode" }
+            $instance.Image = $cImage
         }
-    }
-    finally
-    {
+        if (!($instance.ContainsKey('Command')))
+        {
+            $instance.Command = "tail", "-f", "/dev/null"
+        }
+        $container = New-AzContainerInstanceObject @instance
+
+        # setup container group
+        $group = @{}
+        if ($Options.ContainsKey('Group'))
+        {
+            $group = $Options.Group
+        }
+        if (!($group.ContainsKey('ResourceGroupName')))
+        {
+            Write-Warning "Aci Container Group: Required ResourceGroupName property not found in '$($group)', provide property in Group HashTable, using default ResourceGroupName 'rg-scriptbook'"
+            $group.ResourceGroupName = 'rg-scriptbook'
+        }
+        if (!($group.ContainsKey('Location')))
+        {
+            Write-Warning "Aci Container Group: Required Location property not found in '$($group)', provide property in Group HashTable, use for example 'WestEurope', using default Location 'WestEurope'"
+            $group.Location = 'WestEurope'
+        }
+        if (!($group.ContainsKey('Name')))
+        {
+            $group.Name = "cg-scriptbook-$($containerName)"
+        }
+        $group.Container = $container
+        $group.Location = $group.location
         try
         {
-            if ($containerStarted)
+            # create container group
+            New-AzContainerGroup @group | Out-Null
+
+            # execute command
+            Invoke-AzContainerInstanceCommand -ContainerGroupName $group.Name -ResourceGroupName $group.ResourceGroupName -ContainerName $instance.Name -Command "pwsh -NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand $encodedCommand"
+
+            if ($Options.ContainsKey('Log') -and $Options.Log)
             {
-                $r = docker stop "$containerName"
-                if ($LASTEXITCODE -ne 0) { Throw "Error in docker stop for container '$containerName' : $LastExitCode $r" }
+                Get-AzContainerInstanceLog -ContainerGroupName $group.Name -ResourceGroupName $group.ResourceGroupName -ContainerName $instance.Name
             }
         }
         finally
         {
-            $r = docker container ls -a -f name=$containerName
-            if ($LASTEXITCODE -ne 0) { $r = $containerName } # some context's don't support container ls --> always try to remove
+            # stop execution if not halted
+            Stop-AzContainerGroup -Name $group.Name -ResourceGroupName $group.ResourceGroupName -ErrorAction Continue | Out-Null
 
-            if ( "$r".Contains($containerName))
+            # remove container group
+            $removeGroup = $Options.ContainsKey('Debug') -and $Options.Debug
+            if (!$removeGroup)
             {
-                $r = docker rm --force $containerName
-                if ($LASTEXITCODE -ne 0) { Throw "Error in docker remove for container '$containerName' output: $r" }
+                Remove-AzContainerGroup -Name $group.Name -ResourceGroupName $group.ResourceGroupName -ErrorAction Continue | Out-Null
+            }
+        }
+    }
+    else
+    {
+        $containerStarted = $false
+        try
+        {
+            Write-Verbose "Running container '$containerName' with image '$cImage' in $(Get-Location)"
+
+            if ($dockerContext)
+            {
+                $r = docker context use $dockerContext
+                if ($LASTEXITCODE -ne 0) { Throw "Error in docker context switch $dockerContext : $LastExitCode $r" }
+            }
+
+            if ($dockerCredentials -and $dockerRegistry)
+            {
+                $r = $dockerCredentials.Password | docker login $dockerRegistry -u $dockerCredentials.Username --password-stdin
+                if ($LASTEXITCODE -ne 0) { Throw "Error in docker login : $LastExitCode $r" }
+            }
+    
+            if ($useSeparateDockerCommands)
+            {
+                $r = StartWithDocker create @envVars $volumeVars --platform=$platform --tty --interactive --name "$containerName" $cImage
+                if ($LASTEXITCODE -ne 0) { Throw "Error in docker create for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode $r" }
+
+                if ($File -and $Isolated.IsPresent)
+                {
+                    # copy script and modules when isolated
+                    docker cp "$scriptPath" "$($containerName):/$workFolderName/Scripts"
+                    if ($m.RepositorySourceLocation)
+                    {
+                        $tmp = Join-Path (Get-TempPath) (New-Guid)
+                        New-Item $tmp -ItemType Directory | Out-Null
+                        try
+                        {
+                            $sPath = Join-Path (Join-Path $tmp Scriptbook ) $m.Version
+                            Copy-Item $scriptbookModulePath $sPath -Recurse
+                            docker cp "$tmp" "$($containerName):/$workFolderName/Scriptbook"
+                        }
+                        finally
+                        {
+                            Remove-Item $tmp -Recurse -Force -ErrorAction Ignore
+                        }
+                    }
+                    else
+                    {
+                        docker cp "$scriptbookModulePath" "$($containerName):/$workFolderName/Scriptbook"
+                    }
+                }
+                $r = docker start "$containerName"
+                if ($LASTEXITCODE -ne 0) { Throw "Error in docker start for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode $r" }
+                $containerStarted = $true
+
+                $r = Start-ShellCmd -Progress -Command 'docker' -Arguments "exec `"$containerName`" pwsh -NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand $encodedCommand"
+                if ($r.ExitCode -ne 0) { Throw "Error in docker exec for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode" }
+                if ([string]::IsNullOrEmpty($r.StdOut)) { Throw "No output found in 'docker exec' command" }
+                if (![string]::IsNullOrEmpty($r.StdErr)) 
+                {
+                    Throw "Errors found in output 'docker exec' command $($r.StdErr)"
+                }
+            }
+            else
+            {
+                StartWithDocker run @envVars $volumeVars --platform=$platform --name "$containerName" $cImage pwsh -NonInteractive -NoLogo -OutputFormat Text -ExecutionPolicy Bypass -EncodedCommand $encodedCommand
+                if ($LASTEXITCODE -ne 0) { Throw "Error in docker run for container '$containerName' with image '$cImage' on platform '$platform' : $LastExitCode" }
+            }
+        }
+        finally
+        {
+            try
+            {
+                if ($containerStarted)
+                {
+                    $r = docker stop "$containerName"
+                    if ($LASTEXITCODE -ne 0) { Throw "Error in docker stop for container '$containerName' : $LastExitCode $r" }
+                }
+            }
+            finally
+            {
+                $r = docker container ls -a -f name=$containerName
+                if ($LASTEXITCODE -ne 0) { $r = $containerName } # some context's don't support container ls --> always try to remove
+
+                if ( "$r".Contains($containerName))
+                {
+                    $r = docker rm --force $containerName
+                    if ($LASTEXITCODE -ne 0) { Throw "Error in docker remove for container '$containerName' output: $r" }
+                }
             }
         }
     }

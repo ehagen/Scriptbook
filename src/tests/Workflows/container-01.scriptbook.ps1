@@ -53,9 +53,10 @@ Action GoodBy -ContainerOptions @{ Image = 'mcr.microsoft.com/dotnet/sdk:6.0'; }
     Write-Host "Current-folder: $(Get-Location)"    
 }
 
+# enter your registry credentials here and remove the -Skip option
 $credential = New-Object System.Management.Automation.PSCredential ('mySecureUser', (ConvertTo-SecureString 'SamplePassword' -AsPlainText -Force))
 
-Action HelloToo -ContainerOptions @{Registry = 'hello' ; Credentials = $credential } {
+Action HelloToo2 -ContainerOptions @{Registry = 'hello' ; Credentials = $credential } -Skip {
     Write-Info "Hello"
     Write-Info " Computer details"
     Write-Info "      Computer: $([Environment]::MachineName)"

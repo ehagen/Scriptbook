@@ -4,7 +4,18 @@
 ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/Scriptbook.svg?label=PSGallery%20Downloads&logo=PowerShell&style=flat-square)
 [![Build Status](https://dev.azure.com/tedon/TD.Deploy/_apis/build/status/ehagen.Scriptbook?branchName=master)](https://dev.azure.com/tedon/TD.Deploy/_build/latest?definitionId=52&branchName=master)
 
-## [0.6.4] 2023-03-11
+## [0.6.6] 2023-07-05
+
+```plain
+### Added
+- Azure Container Instance (ACI) support for running Scriptbook script in container
+
+### Fixed
+- Updated dev container
+
+```
+
+## [0.6.5] 2023-03-11
 
 ```plain
 ### Fixed
