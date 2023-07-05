@@ -12,6 +12,7 @@
 
 ### Fixed
 - Updated dev container
+- Updated PSSecretScanner module & usage
 
 ```
 
