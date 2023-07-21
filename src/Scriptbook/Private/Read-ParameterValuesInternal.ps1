@@ -26,7 +26,7 @@ function Read-ParameterValuesInternal
             }
             elseif ($prop.Value -is [PSCustomObject])
             {
-                if ($prop.Value.TypeName -and ($prop.Value.TypeName -eq 'SecureStringStorage') )
+                if ((Test-PSProperty -o $prop.Value -p 'TypeName' -Exact) -and ($prop.Value.TypeName -eq 'SecureStringStorage') )
                 {
                     $prop.Value = [SecureStringStorage]$prop.Value
                 }

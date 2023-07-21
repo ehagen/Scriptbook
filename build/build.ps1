@@ -28,6 +28,7 @@ Import-Module ../src/Scriptbook/Scriptbook.psm1 -Force -Args @{
         },
         @{
             Module = 'PSSecretScanner'
+            MinimumVersion = '2.0.1'
         }        
     ) 
 }

@@ -46,8 +46,9 @@ Action AnalyzeSecrets {
         '.cs'
         '.config'
     )
-    $result = Find-Secret -OutputPreference Object -Filetype $fileType -Path ./.. # -Verbose
-    if ($result)
+    $result = Find-Secret -Filetype $fileType -Path ./.. # -OutputPreference Object  -Verbose
+    $result
+    if ($result.FailedFailCount -gt 0)
     {
         Throw "Secret Scanner ($result) secret(s) found"
     }    

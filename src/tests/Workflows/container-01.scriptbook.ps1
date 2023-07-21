@@ -2,7 +2,7 @@ Set-Location $PSScriptRoot
 
 Import-Module ../../Scriptbook/Scriptbook.psm1 -Force
 
-Action Hello -Container -ContainerOptions @{Root = '..'; Context = 'default'; } {
+Action Hello -Container -ContainerOptions @{Root = '..'; Context = 'default'; EnvVarPrefixes = @(); } {
     Write-Info "Hello"
     Write-Info " Computer details"
     Write-Info "      Computer: $([Environment]::MachineName)"
@@ -42,7 +42,7 @@ Action HelloToo -ContainerOptions @{Image = $image; } {
     Write-Info "Current-folder: $(Get-Location)"    
 }
 
-Action GoodBy -ContainerOptions @{ Image = 'mcr.microsoft.com/dotnet/sdk:5.0'; } -Isolated {
+Action GoodBy -ContainerOptions @{ Image = 'mcr.microsoft.com/dotnet/sdk:6.0'; } -Isolated {
     Write-Host "GoodBy"
     Write-Host " Computer details"
     Write-Host "      Computer: $([Environment]::MachineName)"
@@ -51,6 +51,20 @@ Action GoodBy -ContainerOptions @{ Image = 'mcr.microsoft.com/dotnet/sdk:5.0'; }
     Write-Host "            OS: $([Environment]::OSVersion.VersionString)"
     Write-Host "          Time: $((Get-Date).ToString('s'))"
     Write-Host "Current-folder: $(Get-Location)"    
+}
+
+# enter your registry credentials here and remove the -Skip option
+$credential = New-Object System.Management.Automation.PSCredential ('mySecureUser', (ConvertTo-SecureString 'SamplePassword' -AsPlainText -Force))
+
+Action HelloToo2 -ContainerOptions @{Registry = 'hello' ; Credentials = $credential } -Skip {
+    Write-Info "Hello"
+    Write-Info " Computer details"
+    Write-Info "      Computer: $([Environment]::MachineName)"
+    Write-Info "        WhoAmI: $([Environment]::UserName)"
+    Write-Info "    Powershell: $($PSVersionTable.PsVersion)"
+    Write-Info "            OS: $([Environment]::OSVersion.VersionString)"
+    Write-Info "          Time: $((Get-Date).ToString('s'))"
+    Write-Info "Current-folder: $(Get-Location)"    
 }
 
 if ( ($env:SYSTEM_TEAMPROJECT -or $env:GITHUB_ACTIONS) -and $IsWindows)
